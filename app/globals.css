@@ -2,26 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .animate-pixel-bounce {
+    animation: pixel-bounce 0.5s infinite alternate;
+  }
+
+  .animate-pixel-pulse {
+    animation: pixel-pulse 2s infinite;
+  }
+
+  .animate-pixel-float {
+    animation: pixel-float 3s ease-in-out infinite;
+  }
+
+  .animate-pixel-press {
+    animation: pixel-press 0.1s ease-in-out;
+  }
+
+  @keyframes pixel-bounce {
+    0% {
+      transform: translateY(0);
+    }
+    100% {
+      transform: translateY(-5px);
+    }
+  }
+
+  @keyframes pixel-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  @keyframes pixel-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes pixel-press {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(0.95);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
 }
+
+.pixel-text {
+  letter-spacing: 0.1em;
+  line-height: 1.5;
+}
+
+.pixel-text-glow {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3), 0 0 30px rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.1em;
+  line-height: 1.5;
+}
+
+/* Button press effect */
+.button-press {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Hover glow effects */
+.hover-glow {
+  transition: all 0.2s ease-in-out;
+}
+
+.hover-glow:hover {
+  filter: brightness(1.2) drop-shadow(0 0 5px var(--pixel-blue));
+}
+
