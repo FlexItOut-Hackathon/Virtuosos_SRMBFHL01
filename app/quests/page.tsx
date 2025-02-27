@@ -26,27 +26,13 @@ export default function QuestLog() {
       quest.description.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
-  // Simulate quest progress updates (replace with actual workout tracking)
+  // Remove automatic quest progress simulation
   useEffect(() => {
-    const interval = setInterval(() => {
-      activeQuests.forEach((quest) => {
-        if (Math.random() > 0.7) {
-          const progress = quest.completed + 1
-          updateQuestProgress(quest.id, progress)
-
-          if (progress >= quest.total) {
-            setShowReward({
-              questId: quest.id,
-              xp: quest.xp,
-              name: quest.name,
-            })
-          }
-        }
-      })
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [activeQuests, updateQuestProgress])
+    if (showReward) {
+      const timer = setTimeout(() => setShowReward(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showReward]);
 
   const generateNewQuest = () => {
     alert("New quest generation logic to be implemented.")

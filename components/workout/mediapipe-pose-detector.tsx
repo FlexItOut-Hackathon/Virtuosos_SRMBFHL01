@@ -17,6 +17,38 @@ interface Point {
   y: number;
 }
 
+interface ExerciseState {
+  type: string | null;
+  count: number;
+  lastDetectedTime: number;
+  confidence: number;
+  phase: 'none' | 'up' | 'down' | 'closed' | 'open';
+}
+
+const EXERCISE_CONFIG = {
+  pushup: {
+    armAngleThreshold: 90,
+    cooldown: 500
+  },
+  squat: {
+    kneeAngleThreshold: 100,
+    hipAngleThreshold: 120,
+    cooldown: 500
+  },
+  jumping_jack: {
+    armSpreadThreshold: 80,
+    legSpreadThreshold: 50,
+    cooldown: 300
+  }
+};
+
+const calculateAngle = (p1: Point, p2: Point, p3: Point): number => {
+  const radians = Math.atan2(p3.y - p2.y, p3.x - p2.x) - Math.atan2(p1.y - p2.y, p1.x - p2.x);
+  let angle = Math.abs(radians * 180.0 / Math.PI);
+  if (angle > 180.0) angle = 360 - angle;
+  return angle;
+};
+
 const drawPoint = (ctx: CanvasRenderingContext2D, point: Point, color: string) => {
   ctx.beginPath();
   ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
@@ -46,6 +78,13 @@ export default function MediaPipePoseDetector({
   const detectorRef = useRef<poseDetection.PoseDetector | null>(null);
   const [loading, setLoading] = useState(true);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  const [exerciseState, setExerciseState] = useState<ExerciseState>({
+    type: null,
+    count: 0,
+    lastDetectedTime: Date.now(),
+    confidence: 0,
+    phase: 'none'
+  });
 
   useEffect(() => {
     if (!isActive) return;
@@ -85,6 +124,187 @@ export default function MediaPipePoseDetector({
         setLoading(false);
       }
     }
+
+    const logExerciseToServer = async (exerciseType: string, repetitions: number, confidence: number) => {
+      try {
+        const response = await fetch('/api/exercises', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            timestamp: Date.now(),
+            exerciseType,
+            repetitions,
+            confidence
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to log exercise');
+        }
+
+        // Call the callback to update quests
+        onExerciseDetected(exerciseType, repetitions);
+        
+        // Reset count after logging
+        setExerciseState(prev => ({
+          ...prev,
+          count: 0
+        }));
+      } catch (error) {
+        console.error('Failed to log exercise:', error);
+      }
+    };
+
+    const detectExercise = (pose: poseDetection.Pose) => {
+      const poseScore = pose.score ?? 0;
+      if (!pose.keypoints || poseScore < 0.5) return;
+
+      const now = Date.now();
+      const timeSinceLastDetection = now - exerciseState.lastDetectedTime;
+
+      // If we're in the middle of an exercise but haven't detected movement for 3 seconds,
+      // reset the exercise state
+      if (exerciseState.type && timeSinceLastDetection > 3000) {
+        setExerciseState({
+          type: null,
+          count: 0,
+          lastDetectedTime: now,
+          confidence: 0,
+          phase: 'none'
+        });
+        return;
+      }
+
+      // Get relevant keypoints
+      const leftShoulder = pose.keypoints[11];
+      const rightShoulder = pose.keypoints[12];
+      const leftElbow = pose.keypoints[13];
+      const rightElbow = pose.keypoints[14];
+      const leftWrist = pose.keypoints[15];
+      const rightWrist = pose.keypoints[16];
+      const leftHip = pose.keypoints[23];
+      const rightHip = pose.keypoints[24];
+      const leftKnee = pose.keypoints[25];
+      const rightKnee = pose.keypoints[26];
+      const leftAnkle = pose.keypoints[27];
+      const rightAnkle = pose.keypoints[28];
+
+      // Helper function to check if keypoints are valid
+      const areKeypointsValid = (points: poseDetection.Keypoint[]) => {
+        return points.every(point => point && point.score && point.score > 0.5);
+      };
+
+      // Push-up detection
+      if (areKeypointsValid([leftShoulder, leftElbow, leftWrist, rightShoulder, rightElbow, rightWrist])) {
+        const leftArmAngle = calculateAngle(leftShoulder, leftElbow, leftWrist);
+        const rightArmAngle = calculateAngle(rightShoulder, rightElbow, rightWrist);
+
+        if (exerciseState.type === null || exerciseState.type === 'pushup') {
+          if (leftArmAngle > 150 && rightArmAngle > 150 && exerciseState.phase !== 'up') {
+            setExerciseState(prev => ({
+              ...prev,
+              type: 'pushup',
+              phase: 'up'
+            }));
+          } else if (leftArmAngle < EXERCISE_CONFIG.pushup.armAngleThreshold && 
+                     rightArmAngle < EXERCISE_CONFIG.pushup.armAngleThreshold && 
+                     exerciseState.phase === 'up' && 
+                     timeSinceLastDetection > EXERCISE_CONFIG.pushup.cooldown) {
+            setExerciseState(prev => {
+              const newCount = prev.count + 1;
+              // Call onExerciseDetected for every rep with 1 rep
+              onExerciseDetected('pushup', 1);
+              if (newCount % 5 === 0) {
+                logExerciseToServer('pushup', 5, poseScore);
+              }
+              return {
+                type: 'pushup',
+                count: newCount,
+                lastDetectedTime: now,
+                confidence: poseScore,
+                phase: 'down'
+              };
+            });
+          }
+        }
+      }
+
+      // Squat detection
+      if (areKeypointsValid([leftHip, leftKnee, leftAnkle, rightHip, rightKnee, rightAnkle])) {
+        const leftKneeAngle = calculateAngle(leftHip, leftKnee, leftAnkle);
+        const rightKneeAngle = calculateAngle(rightHip, rightKnee, rightAnkle);
+        const hipAngle = calculateAngle(leftShoulder, leftHip, leftKnee);
+
+        if (exerciseState.type === null || exerciseState.type === 'squat') {
+          if (leftKneeAngle > 150 && rightKneeAngle > 150 && exerciseState.phase !== 'up') {
+            setExerciseState(prev => ({
+              ...prev,
+              type: 'squat',
+              phase: 'up'
+            }));
+          } else if (leftKneeAngle < EXERCISE_CONFIG.squat.kneeAngleThreshold && 
+                     rightKneeAngle < EXERCISE_CONFIG.squat.kneeAngleThreshold && 
+                     hipAngle < EXERCISE_CONFIG.squat.hipAngleThreshold && 
+                     exerciseState.phase === 'up' && 
+                     timeSinceLastDetection > EXERCISE_CONFIG.squat.cooldown) {
+            setExerciseState(prev => {
+              const newCount = prev.count + 1;
+              // Call onExerciseDetected for every rep with 1 rep
+              onExerciseDetected('squat', 1);
+              if (newCount % 5 === 0) {
+                logExerciseToServer('squat', 5, poseScore);
+              }
+              return {
+                type: 'squat',
+                count: newCount,
+                lastDetectedTime: now,
+                confidence: poseScore,
+                phase: 'down'
+              };
+            });
+          }
+        }
+      }
+
+      // Jumping jack detection
+      if (areKeypointsValid([leftShoulder, rightShoulder, leftHip, rightHip, leftAnkle, rightAnkle])) {
+        const armSpread = Math.abs(leftShoulder.x - rightShoulder.x);
+        const legSpread = Math.abs(leftAnkle.x - rightAnkle.x);
+        const normalizedArmSpread = (armSpread / (pose.keypoints[0].y - leftHip.y)) * 100;
+        const normalizedLegSpread = (legSpread / (pose.keypoints[0].y - leftHip.y)) * 100;
+
+        if (exerciseState.type === null || exerciseState.type === 'jumping_jack') {
+          if (normalizedArmSpread < 50 && normalizedLegSpread < 30 && exerciseState.phase !== 'closed') {
+            setExerciseState(prev => ({
+              ...prev,
+              type: 'jumping_jack',
+              phase: 'closed'
+            }));
+          } else if (normalizedArmSpread > EXERCISE_CONFIG.jumping_jack.armSpreadThreshold && 
+                     normalizedLegSpread > EXERCISE_CONFIG.jumping_jack.legSpreadThreshold && 
+                     exerciseState.phase === 'closed' && 
+                     timeSinceLastDetection > EXERCISE_CONFIG.jumping_jack.cooldown) {
+            setExerciseState(prev => {
+              const newCount = prev.count + 1;
+              // Call onExerciseDetected for every rep with 1 rep
+              onExerciseDetected('jumping_jack', 1);
+              if (newCount % 5 === 0) {
+                logExerciseToServer('jumping_jack', 5, poseScore);
+              }
+              return {
+                type: 'jumping_jack',
+                count: newCount,
+                lastDetectedTime: now,
+                confidence: poseScore,
+                phase: 'open'
+              };
+            });
+          }
+        }
+      }
+    };
 
     const startDetection = async () => {
       if (!videoRef.current || !canvasRef.current || !detectorRef.current) return;

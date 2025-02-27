@@ -5,12 +5,20 @@ import type React from "react"
 import { createContext, useContext, useReducer, useEffect, type ReactNode, useCallback } from "react"
 import { generateQuest, type Quest, type QuestType } from "./quest-generator"
 
+interface ExerciseData {
+  timestamp: number
+  exerciseType: string
+  repetitions: number
+  confidence: number
+}
+
 interface QuestState {
   activeQuests: Quest[]
   completedQuests: Quest[]
   userLevel: number
   totalXP: number
   questsCompleted: number
+  lastProcessedTimestamp: number
 }
 
 type QuestAction =
@@ -19,16 +27,17 @@ type QuestAction =
   | { type: "COMPLETE_QUEST"; questId: string }
   | { type: "GAIN_XP"; amount: number }
   | { type: "LEVEL_UP" }
+  | { type: "UPDATE_LAST_PROCESSED"; timestamp: number }
 
-const QuestContext = createContext<
-  | {
-      state: QuestState
-      dispatch: React.Dispatch<QuestAction>
-      generateNewQuest: (preferredTypes?: QuestType[]) => void
-      updateQuestProgress: (questId: string, progress: number) => void
-    }
-  | undefined
->(undefined)
+interface QuestContextType {
+  state: QuestState;
+  dispatch: React.Dispatch<QuestAction>;
+  generateNewQuest: (preferredTypes?: QuestType[]) => void;
+  updateQuestProgress: (questId: string, progress: number) => void;
+  checkExerciseProgress: () => Promise<void>;
+}
+
+const QuestContext = createContext<QuestContextType | undefined>(undefined)
 
 const initialState: QuestState = {
   activeQuests: [],
@@ -36,6 +45,7 @@ const initialState: QuestState = {
   userLevel: 1,
   totalXP: 0,
   questsCompleted: 0,
+  lastProcessedTimestamp: Date.now()
 }
 
 function questReducer(state: QuestState, action: QuestAction): QuestState {
@@ -77,6 +87,11 @@ function questReducer(state: QuestState, action: QuestAction): QuestState {
         ...state,
         userLevel: state.userLevel + 1,
       }
+    case "UPDATE_LAST_PROCESSED":
+      return {
+        ...state,
+        lastProcessedTimestamp: action.timestamp,
+      }
     default:
       return state
   }
@@ -116,6 +131,45 @@ export function QuestProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Add function to check exercise log
+  const checkExerciseProgress = useCallback(async () => {
+    try {
+      const response = await fetch('/api/exercises');
+      if (!response.ok) {
+        throw new Error('Failed to fetch exercise log');
+      }
+
+      const data = await response.json();
+      const exercises: ExerciseData[] = data.exercises;
+
+      // Process each active quest
+      state.activeQuests.forEach(quest => {
+        // Get only new relevant exercises since last check
+        const relevantExercises = exercises.filter(exercise => {
+          return exercise.exerciseType.toLowerCase() === quest.type.toLowerCase() &&
+                 exercise.confidence > 0.5 &&
+                 exercise.timestamp > state.lastProcessedTimestamp;
+        });
+
+        if (relevantExercises.length > 0) {
+          // Calculate new repetitions only from new exercises
+          const newReps = relevantExercises.reduce((sum, exercise) => sum + exercise.repetitions, 0);
+          
+          // Update quest progress by adding new reps to existing progress
+          if (newReps > 0) {
+            const newProgress = quest.completed + newReps;
+            updateQuestProgress(quest.id, newProgress);
+          }
+        }
+      });
+
+      // Update the last processed timestamp
+      dispatch({ type: "UPDATE_LAST_PROCESSED", timestamp: Date.now() });
+    } catch (error) {
+      console.error('Failed to check exercise progress:', error);
+    }
+  }, [state.activeQuests, state.lastProcessedTimestamp]);
+
   // Initialize with some quests
   useEffect(() => {
     if (state.activeQuests.length === 0) {
@@ -132,6 +186,7 @@ export function QuestProvider({ children }: { children: ReactNode }) {
         dispatch,
         generateNewQuest,
         updateQuestProgress,
+        checkExerciseProgress,
       }}
     >
       {children}

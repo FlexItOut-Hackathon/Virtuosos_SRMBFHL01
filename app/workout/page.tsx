@@ -9,9 +9,11 @@ import WorkoutAI from "@/components/workout-ai"
 import VideoCall from "@/components/video-call"
 import { handleButtonClick } from "@/lib/utils"
 import PoseDetector from '@/components/workout/pose-detector'
+import { useQuests } from "@/lib/quest-context"
 
 export default function WorkoutPage() {
   const router = useRouter()
+  const { state, updateQuestProgress } = useQuests()
   const [isStarted, setIsStarted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isCameraEnabled, setIsCameraEnabled] = useState(false)
@@ -89,20 +91,28 @@ export default function WorkoutPage() {
     }, setIsLoading)();
   }
 
-  const handleExerciseUpdate = (exercise: string, reps: number) => {
+  const handleExerciseUpdate = async (exercise: string, reps: number) => {
     const exerciseNames = {
-      armRaise: 'Arm Raise',
-      pushup: 'Pushup',
-      squat: 'Squat',
-      jumpingJack: 'Jumping Jack',
-      crunch: 'Crunch'
+      'arm-raise': 'Arm Raise',
+      'pushup': 'Pushup',
+      'squat': 'Squat',
+      'jumping_jack': 'Jumping Jack',
+      'crunch': 'Crunch'
     };
     
+    // Update display with total reps
     setCurrentExercise(prev => ({
       ...prev,
       name: exerciseNames[exercise as keyof typeof exerciseNames] || exercise,
-      reps: reps
+      reps: prev.reps + reps // Increment by the number of new reps
     }));
+
+    // Find matching quests and update their progress
+    state.activeQuests.forEach(quest => {
+      if (quest.type === exercise) {
+        updateQuestProgress(quest.id, quest.completed + reps);
+      }
+    });
   };
 
   return (

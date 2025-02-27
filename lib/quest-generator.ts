@@ -1,7 +1,7 @@
-import { Dumbbell, Heart, Flame, Brain, Shield, Star, Coins } from "lucide-react"
+import { Dumbbell, Heart, Star, Coins } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
-export type QuestType = "strength" | "cardio" | "flexibility" | "meditation" | "endurance"
+export type QuestType = "pushup" | "squat" | "jumping_jack"
 export type QuestDifficulty = 1 | 2 | 3 | 4 | 5
 
 export interface Quest {
@@ -27,63 +27,41 @@ export interface Reward {
 }
 
 const questTemplates = {
-  strength: [
+  pushup: [
     "Power Training: {count} push-ups",
-    "Strength Challenge: {count} squats",
-    "Muscle Quest: {count} pull-ups",
-    "Warriors Training: {count} lunges",
+    "Upper Body Challenge: {count} push-ups",
+    "Push-up Master: {count} push-ups",
+    "Chest Warrior: {count} push-ups",
   ],
-  cardio: [
-    "Cardio Rush: {count} minutes of running",
+  squat: [
+    "Leg Day: {count} squats",
+    "Squat Challenge: {count} squats",
+    "Lower Body Power: {count} squats",
+    "Squat Master: {count} squats",
+  ],
+  jumping_jack: [
+    "Cardio Rush: {count} jumping jacks",
     "Heart Racer: {count} jumping jacks",
-    "Stamina Builder: {count} minutes of HIIT",
-    "Endurance Test: {count} burpees",
-  ],
-  flexibility: [
-    "Flexibility Focus: Hold {count} stretches",
-    "Balance Master: {count} yoga poses",
-    "Mobility Quest: {count} dynamic stretches",
-    "Zen Warrior: {count} minutes of yoga",
-  ],
-  meditation: [
-    "Mind Temple: {count} minutes of meditation",
-    "Focus Quest: Complete {count} breathing exercises",
-    "Inner Peace: {count} minutes of mindfulness",
-    "Mental Mastery: {count} concentration exercises",
-  ],
-  endurance: [
-    "Endurance Challenge: {count} minutes of planks",
-    "Stamina Quest: {count} mountain climbers",
-    "Warriors Trial: {count} minutes of circuit training",
-    "Power Endurance: {count} kettlebell swings",
+    "Jumping Jack Challenge: {count} jumping jacks",
+    "Cardio Master: {count} jumping jacks",
   ],
 }
 
 const typeConfig = {
-  strength: {
+  pushup: {
     icon: Dumbbell,
     color: "text-pixel-blue",
     baseXP: 100,
   },
-  cardio: {
+  squat: {
+    icon: Dumbbell,
+    color: "text-pixel-green",
+    baseXP: 100,
+  },
+  jumping_jack: {
     icon: Heart,
     color: "text-pixel-red",
     baseXP: 80,
-  },
-  flexibility: {
-    icon: Flame,
-    color: "text-pixel-orange",
-    baseXP: 60,
-  },
-  meditation: {
-    icon: Brain,
-    color: "text-pixel-purple",
-    baseXP: 50,
-  },
-  endurance: {
-    icon: Shield,
-    color: "text-pixel-green",
-    baseXP: 90,
   },
 }
 
