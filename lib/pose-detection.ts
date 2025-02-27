@@ -50,6 +50,16 @@ export function calculateExerciseCount(
       return analyzePushup(keypoints)
     case "crunch":
       return analyzeCrunch(keypoints)
+    case "lunge":
+      return analyzeLunge(keypoints)
+    case "side-bend":
+      return analyzeSideBend(keypoints)
+    case "high-knees":
+      return analyzeHighKnees(keypoints)
+    case "arm-circles":
+      return analyzeArmCircles(keypoints)
+    case "mountain-climber":
+      return analyzeMountainClimber(keypoints)
     default:
       return { isCorrectForm: false, message: "Unknown exercise type" }
   }
@@ -111,6 +121,104 @@ function analyzeCrunch(keypoints: poseDetection.Keypoint[]) {
     return { isCorrectForm: true, message: "Good crunch form!" }
   } else {
     return { isCorrectForm: false, message: "Lift your shoulders more" }
+  }
+}
+
+function analyzeLunge(keypoints: poseDetection.Keypoint[]) {
+  const hipPoint = keypoints.find((kp) => kp.name === "left_hip" || kp.name === "right_hip")
+  const kneePoint = keypoints.find((kp) => kp.name === "left_knee" || kp.name === "right_knee")
+  const anklePoint = keypoints.find((kp) => kp.name === "left_ankle" || kp.name === "right_ankle")
+
+  if (!hipPoint || !kneePoint || !anklePoint) {
+    return { isCorrectForm: false, message: "Could not detect leg position" }
+  }
+
+  // Calculate knee angle
+  const kneeAngle = calculateAngle(hipPoint, kneePoint, anklePoint)
+
+  if (kneeAngle >= 85 && kneeAngle <= 95) {
+    return { isCorrectForm: true, message: "Good lunge form!" }
+  } else if (kneeAngle < 85) {
+    return { isCorrectForm: false, message: "Don't go too low" }
+  } else {
+    return { isCorrectForm: false, message: "Bend your knee more" }
+  }
+}
+
+function analyzeSideBend(keypoints: poseDetection.Keypoint[]) {
+  const shoulderPoint = keypoints.find((kp) => kp.name === "left_shoulder" || kp.name === "right_shoulder")
+  const hipPoint = keypoints.find((kp) => kp.name === "left_hip" || kp.name === "right_hip")
+
+  if (!shoulderPoint || !hipPoint) {
+    return { isCorrectForm: false, message: "Could not detect torso position" }
+  }
+
+  // Calculate lateral bend angle
+  const lateralAngle = Math.abs(shoulderPoint.x - hipPoint.x) / hipPoint.y * 100
+
+  if (lateralAngle > 15) {
+    return { isCorrectForm: true, message: "Good side bend!" }
+  } else {
+    return { isCorrectForm: false, message: "Bend more to the side" }
+  }
+}
+
+function analyzeHighKnees(keypoints: poseDetection.Keypoint[]) {
+  const hipPoint = keypoints.find((kp) => kp.name === "left_hip" || kp.name === "right_hip")
+  const kneePoint = keypoints.find((kp) => kp.name === "left_knee" || kp.name === "right_knee")
+
+  if (!hipPoint || !kneePoint) {
+    return { isCorrectForm: false, message: "Could not detect knee position" }
+  }
+
+  // Check if knee is raised high enough (near hip level)
+  const kneeHeight = hipPoint.y - kneePoint.y
+
+  if (kneeHeight > 20) {
+    return { isCorrectForm: true, message: "Good knee height!" }
+  } else {
+    return { isCorrectForm: false, message: "Lift your knees higher" }
+  }
+}
+
+function analyzeArmCircles(keypoints: poseDetection.Keypoint[]) {
+  const shoulderPoint = keypoints.find((kp) => kp.name === "left_shoulder" || kp.name === "right_shoulder")
+  const elbowPoint = keypoints.find((kp) => kp.name === "left_elbow" || kp.name === "right_elbow")
+  const wristPoint = keypoints.find((kp) => kp.name === "left_wrist" || kp.name === "right_wrist")
+
+  if (!shoulderPoint || !elbowPoint || !wristPoint) {
+    return { isCorrectForm: false, message: "Could not detect arm position" }
+  }
+
+  // Check if arm is extended
+  const armAngle = calculateAngle(shoulderPoint, elbowPoint, wristPoint)
+
+  if (armAngle > 150) {
+    return { isCorrectForm: true, message: "Keep arms straight!" }
+  } else {
+    return { isCorrectForm: false, message: "Extend your arms fully" }
+  }
+}
+
+function analyzeMountainClimber(keypoints: poseDetection.Keypoint[]) {
+  const shoulderPoint = keypoints.find((kp) => kp.name === "left_shoulder" || kp.name === "right_shoulder")
+  const hipPoint = keypoints.find((kp) => kp.name === "left_hip" || kp.name === "right_hip")
+  const kneePoint = keypoints.find((kp) => kp.name === "left_knee" || kp.name === "right_knee")
+
+  if (!shoulderPoint || !hipPoint || !kneePoint) {
+    return { isCorrectForm: false, message: "Could not detect body position" }
+  }
+
+  // Check plank position and knee drive
+  const plankAngle = calculateAngle(shoulderPoint, hipPoint, kneePoint)
+  const kneeHeight = hipPoint.y - kneePoint.y
+
+  if (plankAngle > 160 && kneeHeight > 15) {
+    return { isCorrectForm: true, message: "Good form!" }
+  } else if (plankAngle <= 160) {
+    return { isCorrectForm: false, message: "Keep your body straight" }
+  } else {
+    return { isCorrectForm: false, message: "Drive knees higher" }
   }
 }
 
