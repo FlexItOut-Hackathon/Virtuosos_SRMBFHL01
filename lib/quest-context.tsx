@@ -4,6 +4,7 @@ import type React from "react"
 
 import { createContext, useContext, useReducer, useEffect, type ReactNode, useCallback } from "react"
 import { generateQuest, type Quest, type QuestType } from "./quest-generator"
+import { ExerciseData } from './exercise-tracker';
 
 interface QuestState {
   activeQuests: Quest[]
@@ -115,6 +116,47 @@ export function QuestProvider({ children }: { children: ReactNode }) {
       generateNewQuest([quest.type])
     }
   }
+
+  // Add function to check exercise log
+  const checkExerciseProgress = useCallback(async () => {
+    try {
+      const response = await fetch('/api/exercises');
+      if (!response.ok) {
+        throw new Error('Failed to fetch exercise log');
+      }
+
+      const data = await response.json();
+      const exercises: ExerciseData[] = data.exercises;
+
+      // Process each active quest
+      state.activeQuests.forEach(quest => {
+        // Get relevant exercises for this quest
+        const relevantExercises = exercises.filter(exercise => {
+          // Match exercise type with quest requirements
+          const exerciseMatches = exercise.exerciseType.toLowerCase() === quest.type.toLowerCase();
+          // Only count exercises with good confidence
+          const hasGoodConfidence = exercise.confidence > 0.5;
+          return exerciseMatches && hasGoodConfidence;
+        });
+
+        // Calculate total repetitions
+        const totalReps = relevantExercises.reduce((sum, exercise) => sum + exercise.repetitions, 0);
+
+        // Update quest progress if needed
+        if (totalReps > quest.completed) {
+          updateQuestProgress(quest.id, totalReps);
+        }
+      });
+    } catch (error) {
+      console.error('Failed to check exercise progress:', error);
+    }
+  }, [state.activeQuests]);
+
+  // Check exercise progress periodically
+  useEffect(() => {
+    const interval = setInterval(checkExerciseProgress, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, [checkExerciseProgress]);
 
   // Initialize with some quests
   useEffect(() => {
