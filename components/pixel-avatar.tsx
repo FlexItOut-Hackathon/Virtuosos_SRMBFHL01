@@ -2,7 +2,6 @@
 
 import { useRef, useEffect } from "react"
 import { motion } from "framer-motion"
-import { User } from "lucide-react"
 
 interface PixelAvatarProps {
   size?: "small" | "medium" | "large"
@@ -11,29 +10,25 @@ interface PixelAvatarProps {
 
 export default function PixelAvatar({ size = "medium", role = "user" }: PixelAvatarProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const sizeClasses = {
-    small: "w-8 h-8",
-    medium: "w-12 h-12",
-    large: "w-16 h-16",
-  }
 
   useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    // Set canvas size based on prop
+    const sizes = {
+      small: 32,
+      medium: 48,
+      large: 64
+    }
+    const pixelSize = sizes[size]
+    canvas.width = pixelSize
+    canvas.height = pixelSize
+
     if (role === "assistant") {
-      const canvas = canvasRef.current
-      if (!canvas) return
-
-      const ctx = canvas.getContext("2d")
-      if (!ctx) return
-
-      const sizes = {
-        small: 32,
-        medium: 48,
-        large: 64
-      }
-      const pixelSize = sizes[size]
-      canvas.width = pixelSize
-      canvas.height = pixelSize
-
       // Draw crystal ball
       const centerX = pixelSize / 2
       const centerY = pixelSize / 2
@@ -73,28 +68,41 @@ export default function PixelAvatar({ size = "medium", role = "user" }: PixelAva
       ctx.arc(pixelSize * 0.4, pixelSize * 0.4, pixelSize * 0.1, 0, Math.PI * 2)
       ctx.fillStyle = "rgba(255, 255, 255, 0.6)"
       ctx.fill()
+    } else {
+      // Draw user avatar (pixel character)
+      const colors = {
+        skin: '#FFD1B5',
+        hair: '#4A4A4A',
+        shirt: '#4361ee'
+      }
+
+      // Draw shirt
+      ctx.fillStyle = colors.shirt
+      ctx.fillRect(0, pixelSize * 0.4, pixelSize, pixelSize * 0.6)
+
+      // Draw head
+      ctx.fillStyle = colors.skin
+      ctx.fillRect(pixelSize * 0.25, pixelSize * 0.1, pixelSize * 0.5, pixelSize * 0.4)
+
+      // Draw hair
+      ctx.fillStyle = colors.hair
+      ctx.fillRect(pixelSize * 0.2, pixelSize * 0.05, pixelSize * 0.6, pixelSize * 0.15)
+      ctx.fillRect(pixelSize * 0.15, pixelSize * 0.15, pixelSize * 0.15, pixelSize * 0.2)
+      ctx.fillRect(pixelSize * 0.7, pixelSize * 0.15, pixelSize * 0.15, pixelSize * 0.2)
+
+      // Draw eyes
+      ctx.fillStyle = '#000000'
+      ctx.fillRect(pixelSize * 0.35, pixelSize * 0.25, pixelSize * 0.1, pixelSize * 0.1)
+      ctx.fillRect(pixelSize * 0.55, pixelSize * 0.25, pixelSize * 0.1, pixelSize * 0.1)
     }
   }, [size, role])
-
-  if (role === "user") {
-    return (
-      <div className={`
-        ${sizeClasses[size]}
-        bg-pixel-blue rounded-lg overflow-hidden 
-        border-2 border-pixel-light
-        flex items-center justify-center
-      `}>
-        <User className="text-pixel-light w-1/2 h-1/2" />
-      </div>
-    )
-  }
 
   return (
     <motion.canvas
       ref={canvasRef}
       className={`
         rounded-lg border-2 border-pixel-light
-        ${sizeClasses[size]}
+        ${size === "small" ? "w-8 h-8" : size === "medium" ? "w-12 h-12" : "w-16 h-16"}
       `}
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}

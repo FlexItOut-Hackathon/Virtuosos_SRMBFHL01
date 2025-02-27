@@ -7,11 +7,25 @@ import { Send, X, Trash2, Maximize2, Minimize2, Sparkles } from "lucide-react"
 import { useChat } from "@/lib/chat-context"
 import PixelAvatar from "@/components/pixel-avatar"
 import PixelButton from "@/components/pixel-button"
+import { CrystalBall } from "@/components/crystal-ball"
 
 interface ChatWindowProps {
   isOpen?: boolean
   onClose?: () => void
   className?: string
+}
+
+// Add a smaller version of CrystalBall for chat messages
+interface SmallCrystalBallProps {
+  isThinking: boolean
+}
+
+function SmallCrystalBall({ isThinking }: SmallCrystalBallProps) {
+  return (
+    <div className="scale-[0.25] origin-top-left transform translate-x-4 translate-y-4">
+      <CrystalBall isThinking={isThinking} />
+    </div>
+  )
 }
 
 export default function ChatWindow({ isOpen = true, onClose, className = "" }: ChatWindowProps) {
@@ -141,9 +155,7 @@ export default function ChatWindow({ isOpen = true, onClose, className = "" }: C
             <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-pixel-light/20 scrollbar-track-transparent">
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center p-4 space-y-4">
-                  <div className="w-16 h-16 bg-pixel-blue/20 rounded-lg border-2 border-pixel-blue flex items-center justify-center animate-pulse">
-                    <Sparkles className="w-8 h-8 text-pixel-blue" />
-                  </div>
+                  <CrystalBall isThinking={isLoading} />
                   <div>
                     <h4 className="text-lg font-pixelFont text-pixel-light mb-2">Welcome, Adventurer!</h4>
                     <p className="text-sm text-pixel-light/80">
@@ -163,9 +175,16 @@ export default function ChatWindow({ isOpen = true, onClose, className = "" }: C
                     className={`flex items-start gap-2 ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}
                   >
                     <div className="flex-shrink-0 mt-1">
-                      <PixelAvatar size="small" />
+                      {message.role === "assistant" ? (
+                        <div className="w-8 h-8">
+                          <CrystalBall isThinking={isLoading} />
+                        </div>
+                      ) : (
+                        <PixelAvatar size="small" role="user" />
+                      )}
                     </div>
-                    <div
+                    <motion.div
+                      whileHover={{ y: -2 }}
                       className={`
                         group relative max-w-[80%] p-3 rounded-lg
                         ${
@@ -174,7 +193,7 @@ export default function ChatWindow({ isOpen = true, onClose, className = "" }: C
                             : "bg-pixel-dark border-2 border-pixel-light rounded-bl-none"
                         }
                         hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]
-                        transition-shadow duration-200
+                        transition-all duration-200
                       `}
                     >
                       <p className="text-pixel-light whitespace-pre-wrap break-words">{message.content}</p>
@@ -188,10 +207,14 @@ export default function ChatWindow({ isOpen = true, onClose, className = "" }: C
                           }
                         `}
                       />
-                      <span className="absolute bottom-0 opacity-0 group-hover:opacity-60 text-xs text-pixel-light transition-opacity px-2 transform translate-y-full">
+                      <motion.span 
+                        initial={{ opacity: 0 }}
+                        whileHover={{ opacity: 1 }}
+                        className="absolute bottom-0 text-xs text-pixel-light/60 px-2 transform translate-y-full"
+                      >
                         {message.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
+                      </motion.span>
+                    </motion.div>
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -202,23 +225,14 @@ export default function ChatWindow({ isOpen = true, onClose, className = "" }: C
                   animate={{ opacity: 1, y: 0 }}
                   className="flex items-start gap-2"
                 >
-                  <div className="flex-shrink-0 mt-1">
-                    <PixelAvatar size="small" />
+                  <div className="flex-shrink-0 mt-1 w-8 h-8">
+                    <CrystalBall isThinking={true} />
                   </div>
                   <div className="relative bg-pixel-dark border-2 border-pixel-light rounded-lg rounded-bl-none p-3">
                     <div className="flex gap-1">
-                      <div
-                        className="w-2 h-2 bg-pixel-light rounded-full animate-bounce"
-                        style={{ animationDelay: "0s" }}
-                      />
-                      <div
-                        className="w-2 h-2 bg-pixel-light rounded-full animate-bounce"
-                        style={{ animationDelay: "0.2s" }}
-                      />
-                      <div
-                        className="w-2 h-2 bg-pixel-light rounded-full animate-bounce"
-                        style={{ animationDelay: "0.4s" }}
-                      />
+                      <div className="w-2 h-2 bg-pixel-light rounded-full animate-bounce" style={{ animationDelay: "0s" }} />
+                      <div className="w-2 h-2 bg-pixel-light rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
+                      <div className="w-2 h-2 bg-pixel-light rounded-full animate-bounce" style={{ animationDelay: "0.4s" }} />
                     </div>
                     <div className="absolute bottom-0 left-0 w-4 h-4 border-2 border-pixel-light bg-pixel-dark transform -translate-x-1/2 translate-y-1/2 rotate-45" />
                   </div>
