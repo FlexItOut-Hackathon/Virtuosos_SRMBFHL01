@@ -8,7 +8,8 @@ import '@mediapipe/pose';
 interface PoseDetectorProps {
   isActive: boolean;
   className?: string;
-  exerciseType: 'armRaise' | 'pushup' | 'squat' | 'jumpingJack' | 'crunch';
+  exerciseType: 'armRaise' | 'pushup' | 'squat' | 'jumpingJack' | 'crunch' | 
+                'lunge' | 'sideBend' | 'highKnees' | 'armCircles' | 'mountainClimber';
   onExerciseUpdate?: (exercise: string, reps: number) => void;
 }
 
@@ -290,6 +291,160 @@ const detectCrunch = (keypoints: poseDetection.Keypoint[], state: { phase: strin
   return newState;
 };
 
+const detectLunge = (keypoints: poseDetection.Keypoint[], state: { phase: string, repCount: number, name: string }) => {
+  const hipPoint = keypoints.find((kp) => kp.name === "left_hip" || kp.name === "right_hip");
+  const kneePoint = keypoints.find((kp) => kp.name === "left_knee" || kp.name === "right_knee");
+  const anklePoint = keypoints.find((kp) => kp.name === "left_ankle" || kp.name === "right_ankle");
+
+  if (!hipPoint || !kneePoint || !anklePoint) {
+    return state;
+  }
+
+  const kneeAngle = calculateAngle(hipPoint, kneePoint, anklePoint);
+
+  const newState = {
+    name: 'lunge',
+    phase: state.phase,
+    repCount: state.repCount
+  };
+
+  if (kneeAngle < 100) {
+    if (state.phase === 'up') {
+      newState.phase = 'down';
+      newState.repCount = state.repCount + 1;
+    }
+  } else if (kneeAngle > 160) {
+    if (state.phase === 'down') {
+      newState.phase = 'up';
+    }
+  }
+
+  return newState;
+};
+
+const detectSideBend = (keypoints: poseDetection.Keypoint[], state: { phase: string, repCount: number, name: string }) => {
+  const shoulderPoint = keypoints.find((kp) => kp.name === "left_shoulder" || kp.name === "right_shoulder");
+  const hipPoint = keypoints.find((kp) => kp.name === "left_hip" || kp.name === "right_hip");
+
+  if (!shoulderPoint || !hipPoint) {
+    return state;
+  }
+
+  const lateralAngle = Math.abs(shoulderPoint.x - hipPoint.x) / hipPoint.y * 100;
+
+  const newState = {
+    name: 'sideBend',
+    phase: state.phase,
+    repCount: state.repCount
+  };
+
+  if (lateralAngle > 15) {
+    if (state.phase === 'center') {
+      newState.phase = 'bent';
+      newState.repCount = state.repCount + 1;
+    }
+  } else {
+    if (state.phase === 'bent') {
+      newState.phase = 'center';
+    }
+  }
+
+  return newState;
+};
+
+const detectHighKnees = (keypoints: poseDetection.Keypoint[], state: { phase: string, repCount: number, name: string }) => {
+  const hipPoint = keypoints.find((kp) => kp.name === "left_hip" || kp.name === "right_hip");
+  const kneePoint = keypoints.find((kp) => kp.name === "left_knee" || kp.name === "right_knee");
+
+  if (!hipPoint || !kneePoint) {
+    return state;
+  }
+
+  const kneeHeight = hipPoint.y - kneePoint.y;
+
+  const newState = {
+    name: 'highKnees',
+    phase: state.phase,
+    repCount: state.repCount
+  };
+
+  if (kneeHeight > 20) {
+    if (state.phase === 'down') {
+      newState.phase = 'up';
+      newState.repCount = state.repCount + 1;
+    }
+  } else {
+    if (state.phase === 'up') {
+      newState.phase = 'down';
+    }
+  }
+
+  return newState;
+};
+
+const detectArmCircles = (keypoints: poseDetection.Keypoint[], state: { phase: string, repCount: number, name: string }) => {
+  const shoulderPoint = keypoints.find((kp) => kp.name === "left_shoulder" || kp.name === "right_shoulder");
+  const elbowPoint = keypoints.find((kp) => kp.name === "left_elbow" || kp.name === "right_elbow");
+  const wristPoint = keypoints.find((kp) => kp.name === "left_wrist" || kp.name === "right_wrist");
+
+  if (!shoulderPoint || !elbowPoint || !wristPoint) {
+    return state;
+  }
+
+  const armAngle = calculateAngle(shoulderPoint, elbowPoint, wristPoint);
+
+  const newState = {
+    name: 'armCircles',
+    phase: state.phase,
+    repCount: state.repCount
+  };
+
+  if (armAngle > 150) {
+    if (state.phase === 'down') {
+      newState.phase = 'up';
+      newState.repCount = state.repCount + 1;
+    }
+  } else {
+    if (state.phase === 'up') {
+      newState.phase = 'down';
+    }
+  }
+
+  return newState;
+};
+
+const detectMountainClimber = (keypoints: poseDetection.Keypoint[], state: { phase: string, repCount: number, name: string }) => {
+  const shoulderPoint = keypoints.find((kp) => kp.name === "left_shoulder" || kp.name === "right_shoulder");
+  const hipPoint = keypoints.find((kp) => kp.name === "left_hip" || kp.name === "right_hip");
+  const kneePoint = keypoints.find((kp) => kp.name === "left_knee" || kp.name === "right_knee");
+
+  if (!shoulderPoint || !hipPoint || !kneePoint) {
+    return state;
+  }
+
+  const plankAngle = calculateAngle(shoulderPoint, hipPoint, kneePoint);
+  const kneeHeight = hipPoint.y - kneePoint.y;
+
+  const newState = {
+    name: 'mountainClimber',
+    phase: state.phase,
+    repCount: state.repCount
+  };
+
+  if (plankAngle > 160 && kneeHeight > 15) {
+    if (state.phase === 'down') {
+      newState.phase = 'up';
+      newState.repCount = state.repCount + 1;
+    }
+  } else {
+    if (state.phase === 'up') {
+      newState.phase = 'down';
+    }
+  }
+
+  return newState;
+};
+
 export default function PoseDetector({ isActive, className = '', exerciseType, onExerciseUpdate }: PoseDetectorProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -495,6 +650,16 @@ export default function PoseDetector({ isActive, className = '', exerciseType, o
                     return detectJumpingJack(pose.keypoints, stateRef.current);
                   case 'crunch':
                     return detectCrunch(pose.keypoints, stateRef.current);
+                  case 'lunge':
+                    return detectLunge(pose.keypoints, stateRef.current);
+                  case 'sideBend':
+                    return detectSideBend(pose.keypoints, stateRef.current);
+                  case 'highKnees':
+                    return detectHighKnees(pose.keypoints, stateRef.current);
+                  case 'armCircles':
+                    return detectArmCircles(pose.keypoints, stateRef.current);
+                  case 'mountainClimber':
+                    return detectMountainClimber(pose.keypoints, stateRef.current);
                   default:
                     return detectArmRaise(pose.keypoints, stateRef.current);
                 }
@@ -622,8 +787,98 @@ export default function PoseDetector({ isActive, className = '', exerciseType, o
                   ctx.fillStyle = '#00ff00';
                   ctx.fillText(`${Math.round(angle)}°`, pose.keypoints[23].x + 10, pose.keypoints[23].y);
                 }
+              } else if (exerciseType === 'lunge') {
+                // Draw legs and hips for lunge
+                drawLine(ctx, pose.keypoints[23], pose.keypoints[25]); // left hip to knee
+                drawLine(ctx, pose.keypoints[25], pose.keypoints[27]); // left knee to ankle
+                drawLine(ctx, pose.keypoints[24], pose.keypoints[26]); // right hip to knee
+                drawLine(ctx, pose.keypoints[26], pose.keypoints[28]); // right knee to ankle
+                drawLine(ctx, pose.keypoints[23], pose.keypoints[24]); // hip to hip
+                
+                // Draw angles
+                if (pose.keypoints[23].score && pose.keypoints[25].score && pose.keypoints[27].score) {
+                  const angle = calculateAngle(pose.keypoints[23], pose.keypoints[25], pose.keypoints[27]);
+                  ctx.font = '16px system-ui, sans-serif';
+                  ctx.fillStyle = '#00ff00';
+                  ctx.fillText(`${Math.round(angle)}°`, pose.keypoints[25].x + 10, pose.keypoints[25].y);
+                }
+              } else if (exerciseType === 'sideBend') {
+                // Draw torso for side bends
+                drawLine(ctx, pose.keypoints[11], pose.keypoints[12]); // shoulder to shoulder
+                drawLine(ctx, pose.keypoints[11], pose.keypoints[23]); // left shoulder to hip
+                drawLine(ctx, pose.keypoints[12], pose.keypoints[24]); // right shoulder to hip
+                drawLine(ctx, pose.keypoints[23], pose.keypoints[24]); // hip to hip
+                
+                // Draw lateral angle
+                const shoulderMidpoint = {
+                  x: (pose.keypoints[11].x + pose.keypoints[12].x) / 2,
+                  y: (pose.keypoints[11].y + pose.keypoints[12].y) / 2
+                };
+                const hipMidpoint = {
+                  x: (pose.keypoints[23].x + pose.keypoints[24].x) / 2,
+                  y: (pose.keypoints[23].y + pose.keypoints[24].y) / 2
+                };
+                ctx.beginPath();
+                ctx.moveTo(shoulderMidpoint.x, shoulderMidpoint.y);
+                ctx.lineTo(hipMidpoint.x, hipMidpoint.y);
+                ctx.stroke();
+              } else if (exerciseType === 'highKnees') {
+                // Draw legs and hips for high knees
+                drawLine(ctx, pose.keypoints[23], pose.keypoints[25]); // left hip to knee
+                drawLine(ctx, pose.keypoints[25], pose.keypoints[27]); // left knee to ankle
+                drawLine(ctx, pose.keypoints[24], pose.keypoints[26]); // right hip to knee
+                drawLine(ctx, pose.keypoints[26], pose.keypoints[28]); // right knee to ankle
+                drawLine(ctx, pose.keypoints[23], pose.keypoints[24]); // hip to hip
+                
+                // Draw knee height indicator
+                if (pose.keypoints[23].score && pose.keypoints[25].score) {
+                  const kneeHeight = pose.keypoints[23].y - pose.keypoints[25].y;
+                  ctx.font = '16px system-ui, sans-serif';
+                  ctx.fillStyle = '#00ff00';
+                  ctx.fillText(`Height: ${Math.round(kneeHeight)}`, pose.keypoints[25].x + 10, pose.keypoints[25].y);
+                }
+              } else if (exerciseType === 'armCircles') {
+                // Draw arms for arm circles
+                drawLine(ctx, pose.keypoints[11], pose.keypoints[13]); // left shoulder to elbow
+                drawLine(ctx, pose.keypoints[13], pose.keypoints[15]); // left elbow to wrist
+                drawLine(ctx, pose.keypoints[12], pose.keypoints[14]); // right shoulder to elbow
+                drawLine(ctx, pose.keypoints[14], pose.keypoints[16]); // right elbow to wrist
+                drawLine(ctx, pose.keypoints[11], pose.keypoints[12]); // shoulder to shoulder
+                
+                // Draw arm angles
+                if (pose.keypoints[11].score && pose.keypoints[13].score && pose.keypoints[15].score) {
+                  const angle = calculateAngle(pose.keypoints[11], pose.keypoints[13], pose.keypoints[15]);
+                  ctx.font = '16px system-ui, sans-serif';
+                  ctx.fillStyle = '#00ff00';
+                  ctx.fillText(`${Math.round(angle)}°`, pose.keypoints[13].x + 10, pose.keypoints[13].y);
+                }
+              } else if (exerciseType === 'mountainClimber') {
+                // Draw full body for mountain climbers
+                // Upper body
+                drawLine(ctx, pose.keypoints[11], pose.keypoints[12]); // shoulder to shoulder
+                drawLine(ctx, pose.keypoints[11], pose.keypoints[13]); // left shoulder to elbow
+                drawLine(ctx, pose.keypoints[13], pose.keypoints[15]); // left elbow to wrist
+                drawLine(ctx, pose.keypoints[12], pose.keypoints[14]); // right shoulder to elbow
+                drawLine(ctx, pose.keypoints[14], pose.keypoints[16]); // right elbow to wrist
+                
+                // Core and legs
+                drawLine(ctx, pose.keypoints[11], pose.keypoints[23]); // left shoulder to hip
+                drawLine(ctx, pose.keypoints[12], pose.keypoints[24]); // right shoulder to hip
+                drawLine(ctx, pose.keypoints[23], pose.keypoints[24]); // hip to hip
+                drawLine(ctx, pose.keypoints[23], pose.keypoints[25]); // left hip to knee
+                drawLine(ctx, pose.keypoints[25], pose.keypoints[27]); // left knee to ankle
+                drawLine(ctx, pose.keypoints[24], pose.keypoints[26]); // right hip to knee
+                drawLine(ctx, pose.keypoints[26], pose.keypoints[28]); // right knee to ankle
+                
+                // Draw plank angle
+                if (pose.keypoints[11].score && pose.keypoints[23].score && pose.keypoints[25].score) {
+                  const angle = calculateAngle(pose.keypoints[11], pose.keypoints[23], pose.keypoints[25]);
+                  ctx.font = '16px system-ui, sans-serif';
+                  ctx.fillStyle = '#00ff00';
+                  ctx.fillText(`${Math.round(angle)}°`, pose.keypoints[23].x + 10, pose.keypoints[23].y);
+                }
               } else {
-                // Draw arms for arm raises
+                // Default arm raise drawing
                 drawLine(ctx, pose.keypoints[11], pose.keypoints[13]); // left shoulder to elbow
                 drawLine(ctx, pose.keypoints[13], pose.keypoints[15]); // left elbow to wrist
                 drawLine(ctx, pose.keypoints[12], pose.keypoints[14]); // right shoulder to elbow
@@ -641,6 +896,11 @@ export default function PoseDetector({ isActive, className = '', exerciseType, o
                   case 'squat': return 'Squats';
                   case 'jumpingJack': return 'Jumping Jacks';
                   case 'crunch': return 'Crunch';
+                  case 'lunge': return 'Lunges';
+                  case 'sideBend': return 'Side Bends';
+                  case 'highKnees': return 'High Knees';
+                  case 'armCircles': return 'Arm Circles';
+                  case 'mountainClimber': return 'Mountain Climber';
                   default: return 'Arm Raises';
                 }
               })()}: ${stateRef.current.repCount}`;

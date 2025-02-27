@@ -18,7 +18,10 @@ export default function WorkoutPage() {
   const [score, setScore] = useState(0)
   const [timeElapsed, setTimeElapsed] = useState(0)
   const [exerciseCount, setExerciseCount] = useState(0)
-  const [selectedExercise, setSelectedExercise] = useState<'armRaise' | 'pushup' | 'squat' | 'jumpingJack' | 'crunch'>('armRaise')
+  const [selectedExercise, setSelectedExercise] = useState<
+    'armRaise' | 'pushup' | 'squat' | 'jumpingJack' | 'crunch' | 
+    'lunge' | 'sideBend' | 'highKnees' | 'armCircles' | 'mountainClimber'
+  >('armRaise')
   const [currentExercise, setCurrentExercise] = useState({
     name: "Arm Raise",
     reps: 0,
@@ -40,7 +43,18 @@ export default function WorkoutPage() {
   useEffect(() => {
     setCurrentExercise(prev => ({
       ...prev,
-      name: selectedExercise === 'pushup' ? 'Pushup' : selectedExercise === 'squat' ? 'Squat' : selectedExercise === 'jumpingJack' ? 'Jumping Jack' : selectedExercise === 'crunch' ? 'Crunch' : 'Arm Raise',
+      name: {
+        armRaise: 'Arm Raise',
+        pushup: 'Pushup',
+        squat: 'Squat',
+        jumpingJack: 'Jumping Jack',
+        crunch: 'Crunch',
+        lunge: 'Lunges',
+        sideBend: 'Side Bends',
+        highKnees: 'High Knees',
+        armCircles: 'Arm Circles',
+        mountainClimber: 'Mountain Climbers'
+      }[selectedExercise] || 'Arm Raise',
       reps: 0
     }));
   }, [selectedExercise]);
@@ -95,7 +109,12 @@ export default function WorkoutPage() {
       pushup: 'Pushup',
       squat: 'Squat',
       jumpingJack: 'Jumping Jack',
-      crunch: 'Crunch'
+      crunch: 'Crunch',
+      lunge: 'Lunges',
+      sideBend: 'Side Bends',
+      highKnees: 'High Knees',
+      armCircles: 'Arm Circles',
+      mountainClimber: 'Mountain Climbers'
     };
     
     setCurrentExercise(prev => ({
@@ -128,7 +147,7 @@ export default function WorkoutPage() {
                 <div className="relative h-full">
                   <select 
                     value={selectedExercise}
-                    onChange={(e) => setSelectedExercise(e.target.value as 'armRaise' | 'pushup' | 'squat' | 'jumpingJack' | 'crunch')}
+                    onChange={(e) => setSelectedExercise(e.target.value as typeof selectedExercise)}
                     className="absolute top-4 right-4 z-10 bg-pixel-dark text-pixel-light border-2 border-pixel-light p-2 rounded font-pixelFont"
                   >
                     <option value="armRaise">Arm Raises</option>
@@ -136,6 +155,11 @@ export default function WorkoutPage() {
                     <option value="squat">Squats</option>
                     <option value="jumpingJack">Jumping Jacks</option>
                     <option value="crunch">Crunches</option>
+                    <option value="lunge">Lunges</option>
+                    <option value="sideBend">Side Bends</option>
+                    <option value="highKnees">High Knees</option>
+                    <option value="armCircles">Arm Circles</option>
+                    <option value="mountainClimber">Mountain Climbers</option>
                   </select>
                   <div className="relative aspect-video rounded-lg overflow-hidden">
                     <PoseDetector 
