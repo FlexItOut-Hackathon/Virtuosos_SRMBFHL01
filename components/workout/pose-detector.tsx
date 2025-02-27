@@ -292,15 +292,36 @@ const detectCrunch = (keypoints: poseDetection.Keypoint[], state: { phase: strin
 };
 
 const detectLunge = (keypoints: poseDetection.Keypoint[], state: { phase: string, repCount: number, name: string }) => {
-  const hipPoint = keypoints.find((kp) => kp.name === "left_hip" || kp.name === "right_hip");
-  const kneePoint = keypoints.find((kp) => kp.name === "left_knee" || kp.name === "right_knee");
-  const anklePoint = keypoints.find((kp) => kp.name === "left_ankle" || kp.name === "right_ankle");
+  // Get both legs' keypoints
+  const leftHip = keypoints[23];
+  const rightHip = keypoints[24];
+  const leftKnee = keypoints[25];
+  const rightKnee = keypoints[26];
+  const leftAnkle = keypoints[27];
+  const rightAnkle = keypoints[28];
 
-  if (!hipPoint || !kneePoint || !anklePoint) {
+  // Check if key points are detected
+  const requiredPoints = [
+    leftHip, rightHip, leftKnee, rightKnee, leftAnkle, rightAnkle
+  ];
+  
+  if (!requiredPoints.every(point => point?.score && point.score > 0.2)) {
     return state;
   }
 
-  const kneeAngle = calculateAngle(hipPoint, kneePoint, anklePoint);
+  // Calculate angles for both knees
+  const leftKneeAngle = calculateAngle(leftHip, leftKnee, leftAnkle);
+  const rightKneeAngle = calculateAngle(rightHip, rightKnee, rightAnkle);
+  
+  // Use the smaller angle (more bent knee) for detection
+  const kneeAngle = Math.min(leftKneeAngle, rightKneeAngle);
+
+  console.log('Lunge metrics:', {
+    leftKneeAngle,
+    rightKneeAngle,
+    phase: state.phase,
+    repCount: state.repCount
+  });
 
   const newState = {
     name: 'lunge',
@@ -308,14 +329,17 @@ const detectLunge = (keypoints: poseDetection.Keypoint[], state: { phase: string
     repCount: state.repCount
   };
 
-  if (kneeAngle < 100) {
+  // Lunge detection logic
+  if (kneeAngle < 110) { // Knee is bent in lunge position
     if (state.phase === 'up') {
       newState.phase = 'down';
       newState.repCount = state.repCount + 1;
+      console.log('Lunge: Rep counted:', newState.repCount);
     }
-  } else if (kneeAngle > 160) {
+  } else if (kneeAngle > 150) { // Standing position
     if (state.phase === 'down') {
       newState.phase = 'up';
+      console.log('Lunge: Reset to up position');
     }
   }
 
@@ -323,14 +347,34 @@ const detectLunge = (keypoints: poseDetection.Keypoint[], state: { phase: string
 };
 
 const detectSideBend = (keypoints: poseDetection.Keypoint[], state: { phase: string, repCount: number, name: string }) => {
-  const shoulderPoint = keypoints.find((kp) => kp.name === "left_shoulder" || kp.name === "right_shoulder");
-  const hipPoint = keypoints.find((kp) => kp.name === "left_hip" || kp.name === "right_hip");
+  const leftShoulder = keypoints[11];
+  const rightShoulder = keypoints[12];
+  const leftHip = keypoints[23];
+  const rightHip = keypoints[24];
 
-  if (!shoulderPoint || !hipPoint) {
+  // Check if key points are detected
+  const requiredPoints = [leftShoulder, rightShoulder, leftHip, rightHip];
+  
+  if (!requiredPoints.every(point => point?.score && point.score > 0.2)) {
     return state;
   }
 
-  const lateralAngle = Math.abs(shoulderPoint.x - hipPoint.x) / hipPoint.y * 100;
+  // Calculate the midpoints
+  const shoulderMidX = (leftShoulder.x + rightShoulder.x) / 2;
+  const hipMidX = (leftHip.x + rightHip.x) / 2;
+  
+  // Calculate lateral displacement
+  const lateralBend = Math.abs(shoulderMidX - hipMidX);
+  
+  // Calculate shoulder tilt
+  const shoulderTilt = Math.abs(leftShoulder.y - rightShoulder.y);
+
+  console.log('Side Bend metrics:', {
+    lateralBend,
+    shoulderTilt,
+    phase: state.phase,
+    repCount: state.repCount
+  });
 
   const newState = {
     name: 'sideBend',
@@ -338,14 +382,17 @@ const detectSideBend = (keypoints: poseDetection.Keypoint[], state: { phase: str
     repCount: state.repCount
   };
 
-  if (lateralAngle > 15) {
+  // Side bend detection logic
+  if (lateralBend > 50 || shoulderTilt > 30) { // Significant lateral movement
     if (state.phase === 'center') {
       newState.phase = 'bent';
       newState.repCount = state.repCount + 1;
+      console.log('Side Bend: Rep counted:', newState.repCount);
     }
-  } else {
+  } else { // Centered position
     if (state.phase === 'bent') {
       newState.phase = 'center';
+      console.log('Side Bend: Reset to center position');
     }
   }
 
@@ -353,14 +400,31 @@ const detectSideBend = (keypoints: poseDetection.Keypoint[], state: { phase: str
 };
 
 const detectHighKnees = (keypoints: poseDetection.Keypoint[], state: { phase: string, repCount: number, name: string }) => {
-  const hipPoint = keypoints.find((kp) => kp.name === "left_hip" || kp.name === "right_hip");
-  const kneePoint = keypoints.find((kp) => kp.name === "left_knee" || kp.name === "right_knee");
+  const leftHip = keypoints[23];
+  const rightHip = keypoints[24];
+  const leftKnee = keypoints[25];
+  const rightKnee = keypoints[26];
 
-  if (!hipPoint || !kneePoint) {
+  // Check if key points are detected
+  const requiredPoints = [leftHip, rightHip, leftKnee, rightKnee];
+  
+  if (!requiredPoints.every(point => point?.score && point.score > 0.2)) {
     return state;
   }
 
-  const kneeHeight = hipPoint.y - kneePoint.y;
+  // Calculate height for both knees relative to hips
+  const leftKneeHeight = leftHip.y - leftKnee.y;
+  const rightKneeHeight = rightHip.y - rightKnee.y;
+  
+  // Use the higher knee for detection
+  const maxKneeHeight = Math.max(leftKneeHeight, rightKneeHeight);
+
+  console.log('High Knees metrics:', {
+    leftKneeHeight,
+    rightKneeHeight,
+    phase: state.phase,
+    repCount: state.repCount
+  });
 
   const newState = {
     name: 'highKnees',
@@ -368,14 +432,17 @@ const detectHighKnees = (keypoints: poseDetection.Keypoint[], state: { phase: st
     repCount: state.repCount
   };
 
-  if (kneeHeight > 20) {
+  // High knees detection logic
+  if (maxKneeHeight > 30) { // Knee raised high enough
     if (state.phase === 'down') {
       newState.phase = 'up';
       newState.repCount = state.repCount + 1;
+      console.log('High Knees: Rep counted:', newState.repCount);
     }
-  } else {
+  } else if (maxKneeHeight < 10) { // Knees lowered
     if (state.phase === 'up') {
       newState.phase = 'down';
+      console.log('High Knees: Reset to down position');
     }
   }
 
@@ -383,15 +450,40 @@ const detectHighKnees = (keypoints: poseDetection.Keypoint[], state: { phase: st
 };
 
 const detectArmCircles = (keypoints: poseDetection.Keypoint[], state: { phase: string, repCount: number, name: string }) => {
-  const shoulderPoint = keypoints.find((kp) => kp.name === "left_shoulder" || kp.name === "right_shoulder");
-  const elbowPoint = keypoints.find((kp) => kp.name === "left_elbow" || kp.name === "right_elbow");
-  const wristPoint = keypoints.find((kp) => kp.name === "left_wrist" || kp.name === "right_wrist");
+  const leftShoulder = keypoints[11];
+  const rightShoulder = keypoints[12];
+  const leftElbow = keypoints[13];
+  const rightElbow = keypoints[14];
+  const leftWrist = keypoints[15];
+  const rightWrist = keypoints[16];
 
-  if (!shoulderPoint || !elbowPoint || !wristPoint) {
+  // Check if key points are detected
+  const requiredPoints = [
+    leftShoulder, rightShoulder,
+    leftElbow, rightElbow,
+    leftWrist, rightWrist
+  ];
+  
+  if (!requiredPoints.every(point => point?.score && point.score > 0.2)) {
     return state;
   }
 
-  const armAngle = calculateAngle(shoulderPoint, elbowPoint, wristPoint);
+  // Calculate angles for both arms
+  const leftArmAngle = calculateAngle(leftShoulder, leftElbow, leftWrist);
+  const rightArmAngle = calculateAngle(rightShoulder, rightElbow, rightWrist);
+  
+  // Calculate vertical positions of wrists relative to shoulders
+  const leftWristHeight = leftShoulder.y - leftWrist.y;
+  const rightWristHeight = rightShoulder.y - rightWrist.y;
+
+  console.log('Arm Circles metrics:', {
+    leftArmAngle,
+    rightArmAngle,
+    leftWristHeight,
+    rightWristHeight,
+    phase: state.phase,
+    repCount: state.repCount
+  });
 
   const newState = {
     name: 'armCircles',
@@ -399,15 +491,15 @@ const detectArmCircles = (keypoints: poseDetection.Keypoint[], state: { phase: s
     repCount: state.repCount
   };
 
-  if (armAngle > 150) {
-    if (state.phase === 'down') {
-      newState.phase = 'up';
-      newState.repCount = state.repCount + 1;
-    }
-  } else {
-    if (state.phase === 'up') {
-      newState.phase = 'down';
-    }
+  // Arm circles detection logic - track full circular motion
+  if (state.phase === 'down' && leftWristHeight > 50 && rightWristHeight > 50) {
+    // Arms raised above shoulders
+    newState.phase = 'up';
+  } else if (state.phase === 'up' && leftWristHeight < -20 && rightWristHeight < -20) {
+    // Arms completed circle
+    newState.phase = 'down';
+    newState.repCount = state.repCount + 1;
+    console.log('Arm Circles: Rep counted:', newState.repCount);
   }
 
   return newState;
