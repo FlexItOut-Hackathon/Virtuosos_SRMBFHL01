@@ -15,9 +15,10 @@ interface ChatWindowProps {
 }
 
 export default function ChatWindow({ isOpen = true, onClose, className = "" }: ChatWindowProps) {
-  const { messages, isTyping, sendMessage, clearChat } = useChat()
+  const { messages, isTyping, sendMessage, clearChat, setMessages } = useChat()
   const [input, setInput] = useState("")
   const [isMinimized, setIsMinimized] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = useCallback(() => {
@@ -30,10 +31,62 @@ export default function ChatWindow({ isOpen = true, onClose, className = "" }: C
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() || isLoading) return
 
-    setInput("")
-    await sendMessage(input)
+    try {
+      setIsLoading(true)
+      console.log('Starting submission, isLoading:', true)
+      const userMessage = input
+      setInput("")
+      
+      // First add the user's message to the UI immediately
+      setMessages(prev => [...prev, {
+        id: `msg-${Date.now()}`,
+        content: userMessage,
+        role: 'user',
+        timestamp: new Date()
+      }]);
+      
+      // Then handle the assistant's response through sendMessage
+      const response = await fetch('/api/oracle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: userMessage }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch response from Oracle')
+      }
+
+      const data = await response.json()
+      console.log('Oracle response:', data.response)
+      
+      // Add Oracle's response to chat
+      if (data.response) {
+        setMessages(prev => [...prev, {
+          id: `msg-${Date.now()}`,
+          content: data.response,
+          role: 'assistant',
+          timestamp: new Date()
+        }]);
+      } else {
+        console.error('No response received from Oracle')
+      }
+      
+    } catch (error) {
+      console.error('Error:', error)
+      setMessages(prev => [...prev, {
+        id: `msg-${Date.now()}`,
+        content: 'Apologies, I encountered an error processing your request.',
+        role: 'assistant',
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsLoading(false)
+      console.log('Ending submission, isLoading:', false)
+    }
   }
 
   if (!isOpen) return null
@@ -143,7 +196,7 @@ export default function ChatWindow({ isOpen = true, onClose, className = "" }: C
                 ))}
               </AnimatePresence>
 
-              {isTyping && (
+              {isLoading && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -188,7 +241,7 @@ export default function ChatWindow({ isOpen = true, onClose, className = "" }: C
                            focus:outline-none focus:border-pixel-blue focus:shadow-[0_0_0_1px_rgba(67,97,238,0.3)]
                            transition-all duration-200"
                 />
-                <PixelButton type="submit" disabled={!input.trim() || isTyping} className="h-10 px-3 flex-shrink-0">
+                <PixelButton type="submit" disabled={!input.trim() || isLoading} className="h-10 px-3 flex-shrink-0">
                   <Send className="w-4 h-4" />
                 </PixelButton>
                 <PixelButton type="button" variant="outline" onClick={clearChat} className="h-10 px-3 flex-shrink-0">

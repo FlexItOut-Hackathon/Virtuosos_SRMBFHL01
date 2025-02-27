@@ -8,6 +8,7 @@ interface ChatContextType {
   isTyping: boolean
   sendMessage: (content: string, attachments?: ChatMessage["attachments"]) => Promise<void>
   clearChat: () => void
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
@@ -54,6 +55,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         isTyping,
         sendMessage,
         clearChat,
+        setMessages,
       }}
     >
       {children}
