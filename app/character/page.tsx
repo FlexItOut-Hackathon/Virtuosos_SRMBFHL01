@@ -1,14 +1,54 @@
 "use client"
 
 import { useState } from "react"
-import { User, Award, Dumbbell, Heart, Flame, Zap, Brain, Shield, TrendingUp } from "lucide-react"
+import { User, Award, Dumbbell, Heart, Flame, Zap, Brain, Shield, TrendingUp, X } from "lucide-react"
 import PixelPanel from "@/components/pixel-panel"
 import PixelButton from "@/components/pixel-button"
 import PixelProgress from "@/components/pixel-progress"
 import PixelAvatar from "@/components/pixel-avatar"
+import Image from 'next/image'
 
 export default function Character() {
   const [activeTab, setActiveTab] = useState("stats")
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const AVAILABLE_AVATARS = [
+    { 
+      id: 'char1', 
+      src: 'character_femaleAdventurer_idle.png',
+      name: 'Female Adventurer' 
+    },
+    { 
+      id: 'char2', 
+      src: 'character_maleAdventurer_idle.png',
+      name: 'Male Adventurer' 
+    },
+    { 
+      id: 'char3', 
+      src: 'character_femalePerson_idle.png',
+      name: 'Female Athlete' 
+    },
+    { 
+      id: 'char4', 
+      src: 'character_malePerson_idle.png',
+      name: 'Male Athlete' 
+    },
+    { 
+      id: 'char5', 
+      src: 'character_robot_idle.png',
+      name: 'Robot' 
+    },
+    { 
+      id: 'char6', 
+      src: 'character_zombie_idle.png',
+      name: 'Zombie' 
+    },
+  ]
+  const [profileData, setProfileData] = useState({
+    username: "PixelWarrior",
+    specialization: "Strength Warrior",
+    avatarColor: "blue",
+    selectedAvatar: ''
+  })
 
   const stats = {
     level: 8,
@@ -66,6 +106,109 @@ export default function Character() {
     { id: 5, name: "Weight Lifting", type: "Strength", date: "2023-06-27", xp: 140 },
   ]
 
+  const CLASS_SPECIALIZATIONS = {
+    "Strength Warrior": {
+      description: "Focused on building muscle and power",
+      details: [
+        "Specializes in resistance training and muscle building",
+        "Bonus XP for completing strength-based workouts",
+        "Unlocks advanced weight training programs",
+        "Higher base strength stats"
+      ],
+      icon: <Dumbbell className="text-pixel-light" />
+    },
+    "Cardio Master": {
+      description: "Focused on cardiovascular endurance",
+      details: [
+        "Excels in endurance and stamina activities",
+        "Bonus XP for completing cardio workouts",
+        "Access to advanced HIIT programs",
+        "Enhanced recovery between exercises"
+      ],
+      icon: <Heart className="text-pixel-light" />
+    },
+    "Flexibility Expert": {
+      description: "Focused on mobility and flexibility",
+      details: [
+        "Masters of stretching and mobility work",
+        "Bonus XP for flexibility training",
+        "Special access to yoga and stretching routines",
+        "Reduced risk of workout injuries"
+      ],
+      icon: <Flame className="text-pixel-light" />
+    },
+    "Endurance Runner": {
+      description: "Focused on long-distance performance",
+      details: [
+        "Specializes in long-duration activities",
+        "Bonus XP for running and endurance workouts",
+        "Access to marathon training programs",
+        "Enhanced stamina regeneration"
+      ],
+      icon: <Zap className="text-pixel-light" />
+    },
+    "Power Lifter": {
+      description: "Focused on maximum strength",
+      details: [
+        "Masters of heavy lifting and power moves",
+        "Bonus XP for PR achievements",
+        "Access to powerlifting programs",
+        "Increased strength gains"
+      ],
+      icon: <Dumbbell className="text-pixel-light" />
+    },
+    "Speed Demon": {
+      description: "Focused on agility and speed",
+      details: [
+        "Specializes in quick, explosive movements",
+        "Bonus XP for sprint and agility workouts",
+        "Access to speed training programs",
+        "Enhanced agility stats"
+      ],
+      icon: <Zap className="text-pixel-light" />
+    },
+    "Yoga Master": {
+      description: "Focused on balance and flexibility",
+      details: [
+        "Masters of mind-body connection",
+        "Bonus XP for yoga sessions",
+        "Access to advanced yoga poses",
+        "Enhanced flexibility and balance"
+      ],
+      icon: <Brain className="text-pixel-light" />
+    },
+    "CrossFit Champion": {
+      description: "Focused on overall fitness",
+      details: [
+        "Jack of all trades, master of intensity",
+        "Bonus XP for varied workout completion",
+        "Access to WOD programs",
+        "Balanced stat improvements"
+      ],
+      icon: <Award className="text-pixel-light" />
+    },
+    "Calisthenics Pro": {
+      description: "Focused on bodyweight mastery",
+      details: [
+        "Masters of bodyweight exercises",
+        "Bonus XP for calisthenics workouts",
+        "Access to advanced movement patterns",
+        "Enhanced body control"
+      ],
+      icon: <User className="text-pixel-light" />
+    },
+    "Martial Artist": {
+      description: "Focused on combat fitness",
+      details: [
+        "Combines strength, speed, and flexibility",
+        "Bonus XP for martial arts training",
+        "Access to combat-focused workouts",
+        "Enhanced overall coordination"
+      ],
+      icon: <Shield className="text-pixel-light" />
+    }
+  }
+
   const getStatIcon = (statName: string) => {
     switch (statName) {
       case "health":
@@ -104,6 +247,18 @@ export default function Character() {
     }
   }
 
+  const handleProfileUpdate = (newData: Partial<typeof profileData>) => {
+    setProfileData(prev => ({
+      ...prev,
+      ...newData
+    }))
+    setIsEditModalOpen(false)
+  }
+
+  const handleEditProfile = () => {
+    setIsEditModalOpen(true)
+  }
+
   return (
     <div className="container mx-auto max-w-4xl">
       <div className="flex items-center justify-between mb-6">
@@ -116,8 +271,16 @@ export default function Character() {
         {/* Character Profile */}
         <PixelPanel className="md:col-span-1">
           <div className="flex flex-col items-center">
-            <PixelAvatar size="large" />
-            <h2 className="text-xl font-pixelFont mt-4 text-pixel-light">PixelWarrior</h2>
+            <div 
+              className="cursor-pointer hover:opacity-90 transition-opacity"
+            >
+              <PixelAvatar 
+                size="large" 
+                color={profileData.avatarColor}
+                avatarImage={profileData.selectedAvatar}
+              />
+            </div>
+            <h2 className="text-xl font-pixelFont mt-4 text-pixel-light">{profileData.username}</h2>
             <p className="text-sm text-pixel-green mb-2">Level {stats.level} Fitness Adventurer</p>
 
             <div className="w-full mt-4">
@@ -132,7 +295,7 @@ export default function Character() {
 
             <div className="mt-6 w-full">
               <div className="grid grid-cols-2 gap-2">
-                <PixelButton size="small" className="w-full">
+                <PixelButton size="small" className="w-full" onClick={handleEditProfile}>
                   Edit Profile
                 </PixelButton>
                 <PixelButton size="small" color="green" className="w-full">
@@ -144,13 +307,25 @@ export default function Character() {
             <div className="mt-6 w-full">
               <h3 className="text-lg font-pixelFont mb-2 text-pixel-light">Class Specialization</h3>
               <div className="bg-pixel-dark border-2 border-pixel-light rounded-md p-3">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-pixel-blue rounded-md overflow-hidden border-2 border-pixel-light flex items-center justify-center">
-                    <Dumbbell className="text-pixel-light" />
+                <div className="flex items-start">
+                  <div className="w-10 h-10 bg-pixel-blue rounded-md overflow-hidden border-2 border-pixel-light flex items-center justify-center flex-shrink-0">
+                    {CLASS_SPECIALIZATIONS[profileData.specialization]?.icon}
                   </div>
-                  <div className="ml-3">
-                    <h4 className="font-pixelFont text-pixel-light">Strength Warrior</h4>
-                    <p className="text-xs text-pixel-light opacity-80">Focused on building muscle and power</p>
+                  <div className="ml-3 space-y-2">
+                    <div>
+                      <h4 className="font-pixelFont text-pixel-light">{profileData.specialization}</h4>
+                      <p className="text-xs text-pixel-light opacity-80">
+                        {CLASS_SPECIALIZATIONS[profileData.specialization]?.description}
+                      </p>
+                    </div>
+                    <ul className="text-xs text-pixel-light space-y-1">
+                      {CLASS_SPECIALIZATIONS[profileData.specialization]?.details.map((detail, index) => (
+                        <li key={index} className="flex items-center">
+                          <span className="w-1 h-1 bg-pixel-blue rounded-full mr-2"></span>
+                          {detail}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -295,6 +470,114 @@ export default function Character() {
           </div>
         </PixelPanel>
       </div>
+
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <PixelPanel className="w-full max-w-md relative">
+            <button
+              onClick={() => setIsEditModalOpen(false)}
+              className="absolute top-4 right-4 text-pixel-light hover:text-pixel-blue"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <h2 className="text-xl font-pixelFont mb-6 text-pixel-light">Edit Profile</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-pixel-light font-pixelFont mb-2">Username</label>
+                <input
+                  type="text"
+                  value={profileData.username}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value }))}
+                  className="w-full bg-pixel-dark border-2 border-pixel-light rounded-md p-2 text-pixel-light font-pixelFont"
+                />
+              </div>
+
+              <div>
+                <label className="block text-pixel-light font-pixelFont mb-2">Class Specialization</label>
+                <select
+                  value={profileData.specialization}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, specialization: e.target.value }))}
+                  className="w-full bg-pixel-dark border-2 border-pixel-light rounded-md p-2 text-pixel-light font-pixelFont"
+                >
+                  <option value="Strength Warrior">Strength Warrior</option>
+                  <option value="Cardio Master">Cardio Master</option>
+                  <option value="Flexibility Expert">Flexibility Expert</option>
+                  <option value="Endurance Runner">Endurance Runner</option>
+                  <option value="Power Lifter">Power Lifter</option>
+                  <option value="Speed Demon">Speed Demon</option>
+                  <option value="Yoga Master">Yoga Master</option>
+                  <option value="CrossFit Champion">CrossFit Champion</option>
+                  <option value="Calisthenics Pro">Calisthenics Pro</option>
+                  <option value="Martial Artist">Martial Artist</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-pixel-light font-pixelFont mb-2">Avatar Color</label>
+                <div className="flex gap-2">
+                  {["blue", "red", "green", "yellow", "purple"].map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setProfileData(prev => ({ ...prev, avatarColor: color }))}
+                      className={`w-8 h-8 rounded-md border-2 ${
+                        profileData.avatarColor === color ? 'border-pixel-light' : 'border-transparent'
+                      } bg-pixel-${color}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-pixel-light font-pixelFont mb-2">Choose Avatar</label>
+                <div className="grid grid-cols-3 gap-4 max-h-48 overflow-y-auto p-2">
+                  {AVAILABLE_AVATARS.map((avatar) => (
+                    <button
+                      key={avatar.id}
+                      onClick={() => setProfileData(prev => ({ ...prev, selectedAvatar: avatar.src }))}
+                      className={`relative rounded-lg overflow-hidden border-2 ${
+                        profileData.selectedAvatar === avatar.src 
+                          ? 'border-pixel-blue' 
+                          : 'border-transparent'
+                      }`}
+                    >
+                      <div className="aspect-square">
+                        <img
+                          src={avatar.src}
+                          alt={avatar.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 p-1">
+                        <p className="text-xs text-center text-pixel-light font-pixelFont">
+                          {avatar.name}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-6">
+                <PixelButton
+                  className="flex-1"
+                  onClick={() => handleProfileUpdate(profileData)}
+                >
+                  Save Changes
+                </PixelButton>
+                <PixelButton
+                  color="red"
+                  className="flex-1"
+                  onClick={() => setIsEditModalOpen(false)}
+                >
+                  Cancel
+                </PixelButton>
+              </div>
+            </div>
+          </PixelPanel>
+        </div>
+      )}
     </div>
   )
 }
