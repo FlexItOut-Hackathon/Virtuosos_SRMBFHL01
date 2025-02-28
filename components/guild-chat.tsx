@@ -116,7 +116,7 @@ export default function GuildChat() {
         <h2 className="text-xl font-pixelFont text-pixel-light">Guild Chat</h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+      <div className="flex-1 overflow-y-auto mb-4 space-y-4 scrollbar-thin scrollbar-thumb-pixel-light scrollbar-track-pixel-dark">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -124,6 +124,29 @@ export default function GuildChat() {
               message.type === "system" || message.type === "achievement" ? "justify-center" : ""
             }`}
           >
+            {message.type === "chat" && (
+              <div className={`flex ${message.sender.uid === user.uid ? "flex-row-reverse" : "flex-row"} items-end gap-2 max-w-[90%]`}>
+                <PixelAvatar src={message.sender.avatar || "/default-avatar.png"} size="small" />
+                <div
+                  className={`
+                    relative px-4 py-2 rounded-lg break-words
+                    ${
+                      message.sender.uid === user.uid
+                        ? "bg-pixel-blue/20 border-2 border-pixel-blue"
+                        : "bg-pixel-dark border-2 border-pixel-light"
+                    }
+                    ${message.sender.uid === user.uid ? "rounded-br-none" : "rounded-bl-none"}
+                  `}
+                >
+                  <div className="flex items-center justify-between gap-4 mb-1">
+                    <span className="font-pixelFont text-pixel-light text-sm">{message.sender.displayName}</span>
+                    <span className="text-pixel-light opacity-60 text-xs whitespace-nowrap">{formatTime(message.timestamp)}</span>
+                  </div>
+                  <p className="text-pixel-light break-words">{message.content}</p>
+                </div>
+              </div>
+            )}
+            
             {message.type === "system" && (
               <div className="bg-pixel-dark/50 border border-pixel-light rounded-md px-4 py-2 max-w-[80%]">
                 <p className="text-pixel-light text-sm text-center">{message.content}</p>
@@ -135,37 +158,14 @@ export default function GuildChat() {
                 <p className="text-pixel-yellow text-sm text-center">{message.content}</p>
               </div>
             )}
-
-            {message.type === "chat" && (
-              <div className={`flex ${message.sender.uid === user.uid ? "flex-row-reverse" : "flex-row"} items-end gap-2`}>
-                <PixelAvatar src={message.sender.avatar} size="small" />
-                <div
-                  className={`
-                    relative max-w-[70%] px-4 py-2 rounded-lg
-                    ${
-                      message.sender.uid === user.uid
-                        ? "bg-pixel-blue/20 border-2 border-pixel-blue"
-                        : "bg-pixel-dark border-2 border-pixel-light"
-                    }
-                    ${message.sender.uid === user.uid ? "rounded-br-none" : "rounded-bl-none"}
-                  `}
-                >
-                  <div className="flex items-center justify-between gap-4 mb-1">
-                    <span className="font-pixelFont text-pixel-light text-sm">{message.sender.displayName}</span>
-                    <span className="text-pixel-light opacity-60 text-xs">{formatTime(message.timestamp)}</span>
-                  </div>
-                  <p className="text-pixel-light break-words">{message.content}</p>
-                </div>
-              </div>
-            )}
           </div>
         ))}
         <div ref={chatEndRef} />
       </div>
 
-      <div className="border-t-2 border-pixel-light pt-4">
-        <div className="flex gap-2">
-          <div className="flex">
+      <div className="border-t-2 border-pixel-light pt-4 mt-auto">
+        <div className="flex gap-2 items-center">
+          <div className="flex-shrink-0 flex">
             <PixelButton variant="outline" size="small" className="rounded-r-none border-r-0">
               <FileUp className="w-4 h-4" />
             </PixelButton>
@@ -178,15 +178,17 @@ export default function GuildChat() {
               <Smile className="w-4 h-4" />
             </PixelButton>
           </div>
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Type a message..."
-            className="flex-1 bg-pixel-dark border-2 border-pixel-light rounded-md px-3 py-2 font-pixelFont text-pixel-light focus:outline-none focus:border-pixel-blue"
-          />
-          <PixelButton onClick={handleSend} disabled={!newMessage.trim() || isLoading}>
+          <div className="flex-1 min-w-0">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSend()}
+              placeholder="Type a message..."
+              className="w-full bg-pixel-dark border-2 border-pixel-light rounded-md px-3 py-2 font-pixelFont text-pixel-light focus:outline-none focus:border-pixel-blue"
+            />
+          </div>
+          <PixelButton onClick={handleSend} disabled={!newMessage.trim() || isLoading} className="flex-shrink-0">
             <Send className="w-4 h-4" />
           </PixelButton>
         </div>
