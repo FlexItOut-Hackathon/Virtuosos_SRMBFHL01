@@ -2,73 +2,112 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Send, Smile, FileUp } from "lucide-react"
+import { collection, query, orderBy, limit, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+import { useAuth } from '@/lib/auth-context'
 import PixelButton from "./pixel-button"
 import PixelAvatar from "./pixel-avatar"
+import { useToast } from "@/hooks/use-toast"
 
-type Message = {
-  id: number
-  sender: string
+interface Message {
+  id: string
+  sender: {
+    uid: string
+    displayName: string
+    avatar?: string
+  }
   content: string
   timestamp: Date
   type: "chat" | "system" | "achievement"
-  avatar?: string
 }
 
 export default function GuildChat() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      sender: "System",
-      content: "Welcome to the guild chat! 🎮",
-      timestamp: new Date(),
-      type: "system",
-    },
-    {
-      id: 2,
-      sender: "QuestMaster",
-      content: "Let's tackle today's guild challenge! 💪",
-      timestamp: new Date(),
-      type: "chat",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    {
-      id: 3,
-      sender: "System",
-      content: "🏆 GuildMember123 completed the daily workout challenge!",
-      timestamp: new Date(),
-      type: "achievement",
-    },
-  ])
+  const { user } = useAuth()
+  const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    if (!user) return
+
+    const q = query(
+      collection(db, 'messages'),
+      orderBy('timestamp', 'desc'),
+      limit(50)
+    )
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newMessages = snapshot.docs.map(doc => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          ...data,
+          timestamp: data.timestamp?.toDate() || new Date(),
+        }
+      }) as Message[]
+      
+      setMessages(newMessages.reverse())
+    }, (error) => {
+      console.error("Error fetching messages:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load messages",
+        variant: "destructive",
+      })
+    })
+
+    return () => unsubscribe()
+  }, [user])
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  const handleSend = () => {
-    if (!newMessage.trim()) return
+  const handleSend = async () => {
+    if (!user || !newMessage.trim() || isLoading) return
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        sender: "You",
+    setIsLoading(true)
+    try {
+      await addDoc(collection(db, 'messages'), {
+        sender: {
+          uid: user.uid,
+          displayName: user.displayName || 'Anonymous',
+          avatar: user.photoURL
+        },
         content: newMessage,
-        timestamp: new Date(),
-        type: "chat",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-    ])
-    setNewMessage("")
+        timestamp: serverTimestamp(),
+        type: "chat"
+      })
+      setNewMessage("")
+    } catch (error) {
+      console.error("Error sending message:", error)
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const formatTime = (date: Date) => {
+  const formatTime = (date: Date | undefined) => {
+    if (!date) return ''
     return date.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     })
+  }
+
+  if (!user) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="text-pixel-light">Please sign in to use the guild chat</p>
+      </div>
+    )
   }
 
   return (
@@ -81,7 +120,7 @@ export default function GuildChat() {
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex ${message.sender === "You" ? "justify-end" : "justify-start"} ${
+            className={`flex ${message.sender.uid === user.uid ? "justify-end" : "justify-start"} ${
               message.type === "system" || message.type === "achievement" ? "justify-center" : ""
             }`}
           >
@@ -98,33 +137,24 @@ export default function GuildChat() {
             )}
 
             {message.type === "chat" && (
-              <div className={`flex ${message.sender === "You" ? "flex-row-reverse" : "flex-row"} items-end gap-2`}>
-                <PixelAvatar size="small" image={message.avatar} />
+              <div className={`flex ${message.sender.uid === user.uid ? "flex-row-reverse" : "flex-row"} items-end gap-2`}>
+                <PixelAvatar src={message.sender.avatar} size="small" />
                 <div
                   className={`
                     relative max-w-[70%] px-4 py-2 rounded-lg
                     ${
-                      message.sender === "You"
+                      message.sender.uid === user.uid
                         ? "bg-pixel-blue/20 border-2 border-pixel-blue"
                         : "bg-pixel-dark border-2 border-pixel-light"
                     }
-                    ${message.sender === "You" ? "rounded-br-none" : "rounded-bl-none"}
+                    ${message.sender.uid === user.uid ? "rounded-br-none" : "rounded-bl-none"}
                   `}
                 >
                   <div className="flex items-center justify-between gap-4 mb-1">
-                    <span className="font-pixelFont text-pixel-light text-sm">{message.sender}</span>
+                    <span className="font-pixelFont text-pixel-light text-sm">{message.sender.displayName}</span>
                     <span className="text-pixel-light opacity-60 text-xs">{formatTime(message.timestamp)}</span>
                   </div>
                   <p className="text-pixel-light break-words">{message.content}</p>
-                  <div
-                    className={`absolute bottom-0 ${
-                      message.sender === "You"
-                        ? "right-0 transform translate-x-1/2"
-                        : "left-0 transform -translate-x-1/2"
-                    } translate-y-1/2 w-4 h-4 border-2 ${
-                      message.sender === "You" ? "border-pixel-blue" : "border-pixel-light"
-                    } ${message.sender === "You" ? "bg-pixel-blue/20" : "bg-pixel-dark"} transform rotate-45`}
-                  ></div>
                 </div>
               </div>
             )}
@@ -136,12 +166,12 @@ export default function GuildChat() {
       <div className="border-t-2 border-pixel-light pt-4">
         <div className="flex gap-2">
           <div className="flex">
-            <PixelButton variant="outline" size="icon" className="rounded-r-none border-r-0">
+            <PixelButton variant="outline" size="small" className="rounded-r-none border-r-0">
               <FileUp className="w-4 h-4" />
             </PixelButton>
             <PixelButton
               variant="outline"
-              size="icon"
+              size="small"
               className="rounded-l-none"
               onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
             >
@@ -156,7 +186,7 @@ export default function GuildChat() {
             placeholder="Type a message..."
             className="flex-1 bg-pixel-dark border-2 border-pixel-light rounded-md px-3 py-2 font-pixelFont text-pixel-light focus:outline-none focus:border-pixel-blue"
           />
-          <PixelButton onClick={handleSend} disabled={!newMessage.trim()}>
+          <PixelButton onClick={handleSend} disabled={!newMessage.trim() || isLoading}>
             <Send className="w-4 h-4" />
           </PixelButton>
         </div>

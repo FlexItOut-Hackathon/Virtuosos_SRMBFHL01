@@ -2,7 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
 import { RootLayoutContent } from "./RootLayoutContent"
-import { ToastProvider } from "@/components/ui/toast"
+import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
   title: "Pixel Quest Fitness",
@@ -17,9 +17,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ToastProvider>
-          <RootLayoutContent>{children}</RootLayoutContent>
-        </ToastProvider>
+        <RootLayoutContent>{children}</RootLayoutContent>
+        <Toaster />
       </body>
     </html>
   )
