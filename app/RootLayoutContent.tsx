@@ -8,6 +8,7 @@ import { QuestProvider } from "@/lib/quest-context"
 import { ChatProvider } from "@/lib/chat-context"
 import { AuthProvider } from "@/lib/auth-context"
 import { usePathname } from "next/navigation"
+import { ThemeProvider } from "@/lib/theme-context"
 
 const pixelifySans = Pixelify_Sans({
   subsets: ["latin"],
@@ -21,16 +22,18 @@ export function RootLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthProvider>
-      <QuestProvider>
-        <ChatProvider>
-          <div className={`${pixelifySans.className} bg-pixel-dark text-pixel-light min-h-screen`}>
-            <div className="flex flex-col md:flex-row min-h-screen">
-              {!isAuthPage && <Navigation />}
-              <main className="flex-1 p-4">{children}</main>
+      <ThemeProvider>
+        <QuestProvider>
+          <ChatProvider>
+            <div className={`${pixelifySans.className} bg-pixel-dark text-pixel-light min-h-screen`}>
+              <div className="flex flex-col md:flex-row min-h-screen">
+                {!isAuthPage && <Navigation />}
+                <main className="flex-1 p-4">{children}</main>
+              </div>
             </div>
-          </div>
-        </ChatProvider>
-      </QuestProvider>
+          </ChatProvider>
+        </QuestProvider>
+      </ThemeProvider>
     </AuthProvider>
   )
 }

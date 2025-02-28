@@ -87,3 +87,172 @@
   filter: brightness(1.2) drop-shadow(0 0 5px var(--pixel-blue));
 }
 
+:root {
+  /* Dark mode (default) variables */
+  --pixel-dark: #1a1a1a;
+  --pixel-light: #ffffff;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.8);
+  --border-color: rgba(255, 255, 255, 0.2);
+  --panel-bg: #2a2a2a;
+  --hover-bg: rgba(255, 255, 255, 0.1);
+  --button-bg: #2a2a2a;
+  --button-border: rgba(255, 255, 255, 0.3);
+  --button-hover: #3a3a3a;
+  --input-bg: #2a2a2a;
+  
+  /* Theme colors remain constant */
+  --pixel-blue: #3b82f6;
+  --pixel-red: #ef4444;
+  --pixel-green: #22c55e;
+  --pixel-yellow: #eab308;
+  --pixel-purple: #a855f7;
+  --pixel-orange: #f97316;
+}
+
+.light-mode {
+  /* Light mode overrides */
+  --pixel-dark: #f8fafc;
+  --pixel-light: #1a1a1a;
+  --text-primary: #1a1a1a;
+  --text-secondary: rgba(0, 0, 0, 0.7);
+  --border-color: rgba(0, 0, 0, 0.2);
+  --panel-bg: #ffffff;
+  --hover-bg: rgba(0, 0, 0, 0.05);
+  --button-bg: #f1f5f9;
+  --button-border: rgba(0, 0, 0, 0.2);
+  --button-hover: #e2e8f0;
+  --input-bg: #f8fafc;
+}
+
+/* Updated component styles */
+.bg-pixel-dark {
+  background-color: var(--pixel-dark);
+}
+
+.text-pixel-light {
+  color: var(--text-primary);
+}
+
+/* Panel styles */
+.pixel-panel {
+  background-color: var(--panel-bg);
+  border-color: var(--border-color);
+}
+
+/* Text opacity adjustments */
+.text-pixel-light.opacity-80 {
+  color: var(--text-secondary);
+}
+
+/* Button and interactive element styles */
+.pixel-button {
+  background-color: var(--button-bg);
+  border-color: var(--button-border);
+  color: var(--text-primary);
+}
+
+.pixel-button:hover {
+  background-color: var(--button-hover);
+}
+
+/* Input and form element styles */
+.pixel-input {
+  background-color: var(--panel-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Toggle switch styles */
+.toggle-switch {
+  background-color: var(--panel-bg);
+  border-color: var(--border-color);
+}
+
+/* Progress bar background */
+.progress-bg {
+  background-color: var(--panel-bg);
+  border-color: var(--border-color);
+}
+
+/* Border adjustments */
+.border-pixel-light {
+  border-color: var(--border-color);
+}
+
+/* Hover state adjustments */
+.hover\:bg-pixel-dark:hover {
+  background-color: var(--hover-bg);
+}
+
+/* Shadow adjustments */
+.light-mode .pixel-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Animation adjustments for light mode */
+.light-mode .hover-glow:hover {
+  filter: brightness(0.95) drop-shadow(0 0 5px var(--pixel-blue));
+}
+
+/* Button styles */
+.pixel-button {
+  background-color: var(--button-bg);
+  border-color: var(--button-border);
+  color: var(--text-primary);
+}
+
+.pixel-button:hover {
+  background-color: var(--button-hover);
+}
+
+/* Input styles */
+select, input[type="text"], input[type="email"], input[type="password"] {
+  background-color: var(--input-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Toggle switch styles for light mode */
+.light-mode .toggle-switch {
+  background-color: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.light-mode .toggle-switch[aria-checked="true"] {
+  background-color: var(--pixel-blue);
+}
+
+/* Panel shadow adjustments */
+.light-mode .pixel-panel {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Update select dropdown styles */
+.light-mode select {
+  background-color: var(--input-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.light-mode select:focus {
+  border-color: var(--pixel-blue);
+  outline: none;
+}
+
+/* Update specific button colors for light mode */
+.light-mode .pixel-button[data-color="blue"] {
+  background-color: var(--pixel-blue);
+  color: white;
+}
+
+.light-mode .pixel-button[data-color="red"] {
+  background-color: var(--pixel-red);
+  color: white;
+}
+
+.light-mode .pixel-button[data-color="green"] {
+  background-color: var(--pixel-green);
+  color: white;
+}
+

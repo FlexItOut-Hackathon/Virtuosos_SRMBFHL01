@@ -4,13 +4,14 @@ import { useState } from "react"
 import { Settings, Bell, Volume2, Moon, Sun, Smartphone, Globe } from "lucide-react"
 import PixelPanel from "@/components/pixel-panel"
 import PixelButton from "@/components/pixel-button"
+import { useTheme } from "@/lib/theme-context"
 
 export default function SettingsPage() {
   const [notifications, setNotifications] = useState(true)
   const [sound, setSound] = useState(true)
-  const [darkMode, setDarkMode] = useState(true)
   const [mobileNotifications, setMobileNotifications] = useState(true)
   const [language, setLanguage] = useState("english")
+  const { theme, toggleTheme } = useTheme()
 
   return (
     <div className="container mx-auto max-w-4xl">
@@ -40,7 +41,31 @@ export default function SettingsPage() {
                   checked={notifications}
                   onChange={() => setNotifications(!notifications)}
                 />
-                <div className="w-11 h-6 bg-pixel-dark peer-focus:outline-none rounded-full peer border-2 border-pixel-light peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-pixel-light after:border-pixel-light after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pixel-blue"></div>
+                <div className={`
+                  w-11 h-6 
+                  peer-focus:outline-none 
+                  rounded-full peer 
+                  border-2 
+                  transition-all
+                  ${theme === 'dark' 
+                    ? 'bg-pixel-dark border-pixel-light' 
+                    : 'bg-gray-200 border-gray-300'
+                  }
+                  peer-checked:after:translate-x-full 
+                  peer-checked:after:border-white 
+                  after:content-[''] 
+                  after:absolute 
+                  after:top-[2px] 
+                  after:left-[2px] 
+                  after:bg-pixel-light 
+                  after:border-pixel-light 
+                  after:border 
+                  after:rounded-full 
+                  after:h-5 
+                  after:w-5 
+                  after:transition-all 
+                  peer-checked:bg-pixel-purple
+                `}></div>
               </label>
             </div>
 
@@ -54,13 +79,37 @@ export default function SettingsPage() {
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" checked={sound} onChange={() => setSound(!sound)} />
-                <div className="w-11 h-6 bg-pixel-dark peer-focus:outline-none rounded-full peer border-2 border-pixel-light peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-pixel-light after:border-pixel-light after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pixel-green"></div>
+                <div className={`
+                  w-11 h-6 
+                  peer-focus:outline-none 
+                  rounded-full peer 
+                  border-2 
+                  transition-all
+                  ${theme === 'dark' 
+                    ? 'bg-pixel-dark border-pixel-light' 
+                    : 'bg-gray-200 border-gray-300'
+                  }
+                  peer-checked:after:translate-x-full 
+                  peer-checked:after:border-white 
+                  after:content-[''] 
+                  after:absolute 
+                  after:top-[2px] 
+                  after:left-[2px] 
+                  after:bg-pixel-light 
+                  after:border-pixel-light 
+                  after:border 
+                  after:rounded-full 
+                  after:h-5 
+                  after:w-5 
+                  after:transition-all 
+                  peer-checked:bg-pixel-green
+                `}></div>
               </label>
             </div>
 
             <div className="flex items-center justify-between p-2 border-b border-pixel-light">
               <div className="flex items-center">
-                {darkMode ? (
+                {theme === 'dark' ? (
                   <Moon className="w-5 h-5 text-pixel-purple mr-3" />
                 ) : (
                   <Sun className="w-5 h-5 text-pixel-yellow mr-3" />
@@ -74,10 +123,34 @@ export default function SettingsPage() {
                 <input
                   type="checkbox"
                   className="sr-only peer"
-                  checked={darkMode}
-                  onChange={() => setDarkMode(!darkMode)}
+                  checked={theme === 'dark'}
+                  onChange={toggleTheme}
                 />
-                <div className="w-11 h-6 bg-pixel-dark peer-focus:outline-none rounded-full peer border-2 border-pixel-light peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-pixel-light after:border-pixel-light after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pixel-purple"></div>
+                <div className={`
+                  w-11 h-6 
+                  peer-focus:outline-none 
+                  rounded-full peer 
+                  border-2 
+                  transition-all
+                  ${theme === 'dark' 
+                    ? 'bg-pixel-dark border-pixel-light' 
+                    : 'bg-gray-200 border-gray-300'
+                  }
+                  peer-checked:after:translate-x-full 
+                  peer-checked:after:border-white 
+                  after:content-[''] 
+                  after:absolute 
+                  after:top-[2px] 
+                  after:left-[2px] 
+                  after:bg-pixel-light 
+                  after:border-pixel-light 
+                  after:border 
+                  after:rounded-full 
+                  after:h-5 
+                  after:w-5 
+                  after:transition-all 
+                  peer-checked:bg-pixel-purple
+                `}></div>
               </label>
             </div>
 
@@ -96,7 +169,31 @@ export default function SettingsPage() {
                   checked={mobileNotifications}
                   onChange={() => setMobileNotifications(!mobileNotifications)}
                 />
-                <div className="w-11 h-6 bg-pixel-dark peer-focus:outline-none rounded-full peer border-2 border-pixel-light peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-pixel-light after:border-pixel-light after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pixel-orange"></div>
+                <div className={`
+                  w-11 h-6 
+                  peer-focus:outline-none 
+                  rounded-full peer 
+                  border-2 
+                  transition-all
+                  ${theme === 'dark' 
+                    ? 'bg-pixel-dark border-pixel-light' 
+                    : 'bg-gray-200 border-gray-300'
+                  }
+                  peer-checked:after:translate-x-full 
+                  peer-checked:after:border-white 
+                  after:content-[''] 
+                  after:absolute 
+                  after:top-[2px] 
+                  after:left-[2px] 
+                  after:bg-pixel-light 
+                  after:border-pixel-light 
+                  after:border 
+                  after:rounded-full 
+                  after:h-5 
+                  after:w-5 
+                  after:transition-all 
+                  peer-checked:bg-pixel-orange
+                `}></div>
               </label>
             </div>
 
@@ -109,7 +206,19 @@ export default function SettingsPage() {
                 </div>
               </div>
               <select
-                className="bg-pixel-dark border-2 border-pixel-light rounded-md px-3 py-1 font-pixelFont text-pixel-light focus:outline-none focus:border-pixel-blue"
+                className={`
+                  px-3 py-1
+                  rounded-md
+                  font-pixelFont
+                  border-2
+                  focus:outline-none
+                  focus:border-pixel-blue
+                  transition-colors
+                  ${theme === 'dark' 
+                    ? 'bg-pixel-dark border-pixel-light text-pixel-light' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                  }
+                `}
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
               >
