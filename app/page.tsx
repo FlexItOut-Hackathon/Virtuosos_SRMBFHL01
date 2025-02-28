@@ -9,11 +9,13 @@ import PixelProgress from "@/components/pixel-progress"
 import PixelOracle from "@/components/pixel-oracle"
 import Link from "next/link"
 import { useQuests } from "@/lib/quest-context"
+import { useAvatarProfile } from "@/hooks/useAvatarProfile"
 
 export default function Dashboard() {
   const [health, setHealth] = useState(75)
   const [strength, setStrength] = useState(60)
   const [endurance, setEndurance] = useState(45)
+  const { profile, isReady } = useAvatarProfile()
 
   // Simulate stats changing over time
   useEffect(() => {
@@ -35,6 +37,19 @@ export default function Dashboard() {
   const { state, updateQuestProgress } = useQuests()
   const { activeQuests } = state
 
+  if (!isReady) {
+    return (
+      <div className="container mx-auto max-w-6xl">
+        <div className="animate-pulse">
+          <div className="h-8 bg-pixel-dark rounded w-48 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="h-96 bg-pixel-dark rounded"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto max-w-6xl">
       <h1 className="text-3xl font-pixelFont mb-6 text-pixel-light">Adventure Dashboard</h1>
@@ -44,9 +59,13 @@ export default function Dashboard() {
         <PixelPanel className="md:col-span-1">
           <div className="flex flex-col items-center">
             <h2 className="text-xl font-pixelFont mb-4 text-pixel-light">Your Hero</h2>
-            <PixelAvatar size="large" />
-            <h3 className="text-lg font-pixelFont mt-2 text-pixel-light">PixelWarrior</h3>
-            <p className="text-sm text-pixel-green mb-4">Level 8 Fitness Adventurer</p>
+            <PixelAvatar 
+              size="large"
+              color={profile.avatarColor}
+              avatarImage={profile.selectedAvatar}
+            />
+            <h3 className="text-lg font-pixelFont mt-2 text-pixel-light">{profile.username}</h3>
+            <p className="text-sm text-pixel-green mb-4">Level 8 {profile.specialization}</p>
 
             <div className="w-full space-y-4 mt-2">
               <div>
@@ -98,9 +117,18 @@ export default function Dashboard() {
 
         {/* Active Quests */}
         <PixelPanel className="md:col-span-2">
+          <div className="flex items-center mb-4">
+            <h2 className="text-xl font-pixelFont text-pixel-light">Quest Log</h2>
+            <div className="ml-auto flex items-center space-x-2">
+              <PixelAvatar 
+                size="small"
+                color={profile.avatarColor}
+                avatarImage={profile.selectedAvatar}
+              />
+              <span className="text-sm font-pixelFont text-pixel-light">{profile.username}</span>
+            </div>
+          </div>
           <div>
-            <h2 className="text-xl font-pixelFont mb-4 text-pixel-light">Active Quests</h2>
-
             <div className="space-y-4">
               {activeQuests.map((quest) => (
                 <div

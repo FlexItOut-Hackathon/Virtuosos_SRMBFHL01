@@ -54,6 +54,7 @@ const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(
         {...props}
         ref={ref}
         disabled={disabled || isLoading}
+        data-color={color}
         className={cn(
           // Base styles
           "relative font-pixelFont text-pixel-light",
